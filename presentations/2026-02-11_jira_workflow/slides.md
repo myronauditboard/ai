@@ -7,13 +7,36 @@ Streamlining Development with AI
 ## Overview
 
 - Goals
+- Instructions and skills and walkthrough
+- Jira-triggered workflow walkthrough
+- Demo
+- Tips
+- Future improvements
 
 ---
 
 ## Goals
 
 - Create rules and skills that can be leveraged across the team
-- Stretch: hands-off automated workflows
+- Hands-off automated workflow
+
+---
+
+## Instructions and skills and walkthrough
+
+---
+
+### General Audit instructions
+
+- Backend: [instructions-audit.md](https://github.com/myronauditboard/ai/blob/main/backend/.claude/instructions-audit.md)
+- Frontend: [instructions-audit.md](https://github.com/myronauditboard/ai/blob/main/frontend/.claude/instructions-audit.md)
+
+---
+
+### LD Deprecation instructions
+
+- Backend: [instructions-epic-SOX-79949.md](https://github.com/myronauditboard/ai/blob/main/backend/.claude/instructions-epic-SOX-79949.md)
+- Frontend: [instructions-epic-SOX-79949.md](https://github.com/myronauditboard/ai/blob/main/frontend/.claude/instructions-epic-SOX-79949.md)
 
 ---
 
@@ -33,18 +56,18 @@ scripts/jira-monitor/check-jira.sh
 
 ---
 
+## Tips
+
+Practical advice for AI-assisted development
+
+---
+
 ### Ticket Management
 
 - Keep descriptions clear and actionable
 - Break large tasks into subtasks
 - Use labels and components consistently
 - Link related tickets
-
----
-
-## Tips
-
-Practical advice for AI-assisted development
 
 ---
 
@@ -63,11 +86,29 @@ Practical advice for AI-assisted development
 
 ---
 
-### Managing Context Windows
+### Context and token efficiency
+
+---
+
+#### Managing Context Windows
 
 - **Create new chat windows often** - don't overload context
 - Use compaction to continue work in another window or different LLM
-- General rule: **Don't engage the AI more than 8 times** in one chat
+- General rule: **Don't engage the AI more than 8 times** in one chat, otherwise the LLM starts getting forgetful
+
+---
+
+#### Don't include all the things
+
+- Include references to other resources
+- Add conditionals to determine which resources to load into the context
+
+---
+
+#### Leverage scripts
+
+- Reduces context load too
+- More deterministic behavior
 
 ---
 
@@ -87,9 +128,9 @@ It is possible to have one agent work on `auditboard-backend` and `auditboard-fr
 - Open the parent folder in Cursor
 - Engage AI
 
-----
+---
 
-## TODOs
+## Future improvements
 
 Work items and improvements
 
