@@ -123,6 +123,103 @@ Tips for effective Jira usage
 
 ---
 
+## Tips
+
+Practical advice for AI-assisted development
+
+--
+
+### AI Model Selection
+
+- Use **Plan mode** with sophisticated models like Opus for complex planning
+- Switch to economical **Agent mode** with Sonnet or Composer for implementation
+- Composer is Elya's favorite for routine tasks
+
+--
+
+### Environment Setup
+
+- Grant your IDE/terminal **full disk access** in system preferences
+- Keep **GPG signing** up-to-date for autonomous git operations
+- Properly configured permissions enable seamless automation
+
+--
+
+### Managing Context Windows
+
+- **Create new chat windows often** - don't overload context
+- Use compaction to continue work in another window or different LLM
+- General rule: **Don't engage the AI more than 8 times** in one chat
+
+--
+
+### Cursor Shortcuts
+
+Slash commands in the Agent chat window:
+
+- `/<skill name>` - Invoke custom skills
+- `@<file name>` - Autocomplete and reference files
+
+--
+
+### Multi-Project Workflows
+
+Update `auditboard-backend` and `auditboard-frontend` simultaneously:
+
+- Open the parent folder in Cursor
+- Work across both repos in one session
+
+---
+
+## TODO
+
+Work items and improvements
+
+--
+
+### Monitoring & Logging
+
+- Make cron job more verbose about what it's doing
+- Surface `start-jira-work` messages into the console for better visibility
+
+--
+
+### GitHub Integration
+
+- Set label in GitHub to `pr-deploy`
+- Add Copilot as a reviewer automatically
+
+--
+
+### Cross-Platform AI Tooling
+
+- Port skills and instructions to VSCode Copilot
+- Explore SATL (Shared AI Tooling Layer) from Russell Jones
+
+--
+
+### Code Organization
+
+- `start-jira-work` task is getting large - break it up further
+- Better organization: should instructions be in their own folder?
+
+--
+
+### Infrastructure
+
+- Wire up env to receive Slack messages (waiting on admin authorization)
+- More sample CLI commands
+- Offload tasks to shell scripts or direct API calls where possible
+
+--
+
+### Quality & Documentation
+
+- Add E2E tests when necessary and test thoroughly
+- Find and link to more documentation on coding conventions and standards
+
+---
+
 ## Questions?
 
 Thank you for attending!
