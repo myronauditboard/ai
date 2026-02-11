@@ -24,7 +24,7 @@ JQL='assignee = currentUser() AND status = "To Do"'
 # ---- CONFIG: Repos & Agent ----
 BACKEND_REPO="/Users/myeung/Development/auditboard-backend"
 FRONTEND_REPO="/Users/myeung/Development/auditboard-frontend"
-AGENT_BIN="/Users/myeung/.local/bin/agent"
+AGENT_BIN="/Users/myeung/.local/bin/cursor"
 
 # ---- CONFIG: Paths ----
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
