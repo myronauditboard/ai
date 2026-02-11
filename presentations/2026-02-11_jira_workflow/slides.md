@@ -7,7 +7,7 @@ Streamlining Development with AI
 ## Overview
 
 - Goals
-- Instructions and skills and walkthrough
+- Instructions and skills walkthrough
 - Jira-triggered workflow walkthrough
 - Demo
 - Tips
@@ -22,7 +22,7 @@ Streamlining Development with AI
 
 ---
 
-## Instructions and skills and walkthrough
+## Instructions and skills walkthrough
 
 ---
 
@@ -56,8 +56,8 @@ Streamlining Development with AI
 
 ## Demo
 
-- Prompt: 
-- Check first Jira ticket
+- LD deprecation: `start-jira-work SOX-81756`
+- Jira-triggered workflow: Check first Jira ticket mentioned earlier in the emo
 
 ---
 
@@ -78,6 +78,7 @@ Practical advice for AI-assisted development
 
 ### AI Model Selection
 
+- Minimize token usage
 - Use **Plan mode** with sophisticated models like Opus for complex planning
 - Switch to economical **Agent mode** like Sonnet or Composer (Elya's fav) for implementation
 
