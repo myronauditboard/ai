@@ -49,13 +49,24 @@ Streamlining Development with AI
 
 ## Jira-triggered workflow walkthrough
 
+- Assign a Jira ticket to you with status: To Do
 - Runs every 10 minutes (easy to customize)
-- [skills/jira-monitor/check-jira.sh](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/check-jira.sh)
-- [skills/jira-monitor/setup-cron.sh](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/setup-cron.sh)
+- Automatically create a PR
 
 ---
 
-/Users/myeung/Development/ai/scripts/jira-monitor/setup-cron.sh
+### How to set up the workflow
+
+- One time: `$ ai/scripts/jira-monitor/check-jira.sh`
+- Set up cron job: `$ ai/scripts/jira-monitor/setup-cron.sh`
+
+---
+
+### Scripts
+
+- [skills/jira-monitor/check-jira.sh](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/check-jira.sh)
+- [skills/jira-monitor/setup-cron.sh](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/setup-cron.sh)
+
 ---
 
 ## Demo
