@@ -1,6 +1,4 @@
-# Jira Workflow
-
-Streamlining Development with AI
+# Streamlining Development with AI
 
 ---
 
