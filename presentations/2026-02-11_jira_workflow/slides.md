@@ -49,15 +49,28 @@ Streamlining Development with AI
 
 ## Jira-triggered workflow walkthrough
 
+- Runs every 10 minutes (easy to customize)
 - [skills/jira-monitor/check-jira.sh](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/check-jira.sh)
 - [skills/jira-monitor/setup-cron.sh](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/setup-cron.sh)
 
 ---
 
+/Users/myeung/Development/ai/scripts/jira-monitor/setup-cron.sh
+---
+
 ## Demo
 
-- LD deprecation: `start-jira-work SOX-81756`
-- Jira-triggered workflow: Check first Jira ticket mentioned earlier in the emo
+---
+
+### LD deprecation
+
+- Prompt from `auditboard-frontend`: `start-jira-work SOX-81756`
+
+---
+
+### Jira-triggered workflow
+
+- Check first Jira ticket mentioned earlier in the demo
 
 ---
 
