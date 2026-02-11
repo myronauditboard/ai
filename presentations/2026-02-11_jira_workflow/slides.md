@@ -40,7 +40,7 @@ Streamlining Development with AI
 
 ---
 
-### More instructions coming (clear tech debt)
+### More instructions coming
 
 - Typescript Migration
 - Add Missing Tests
