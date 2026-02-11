@@ -40,19 +40,24 @@ Streamlining Development with AI
 
 ---
 
-## Automation
+### Skills
 
-Leveraging scripts and integrations
+- Backend: [start-jira-work/SKILL.md](https://github.com/myronauditboard/ai/blob/main/backend/.claude/skills/start-jira-work/SKILL.md)
+- Frontend: [start-jira-work/SKILL.md](https://github.com/myronauditboard/ai/blob/main/frontend/.claude/skills/start-jira-work/SKILL.md)
 
 ---
 
-### Monitoring Script
+## Jira-triggered workflow walkthrough
 
-The repo includes a Jira monitoring script:
+- [skills/jira-monitor/check-jira.sh](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/check-jira.sh)
+- [skills/jira-monitor/setup-cron.sh](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/setup-cron.sh)
 
-```bash
-scripts/jira-monitor/check-jira.sh
-```
+---
+
+## Demo
+
+- Prompt: 
+- Check first Jira ticket
 
 ---
 
