@@ -66,6 +66,11 @@ Streamlining Development with AI
 
 - Check that it is running: `$ crontab -l | grep check-jira`
 - Realtime logging: `$ tail -f ai/scripts/jira-monitor/logs/cron.log`
+
+---
+
+### Keeping tabs on the workflow
+
 - Logs: `$ ls -lt /Users/myeung/Development/ai/scripts/jira-monitor/logs/`
 - Remove cron job: `$ crontab -l | grep -v 'check-jira.sh' | crontab -`
 
