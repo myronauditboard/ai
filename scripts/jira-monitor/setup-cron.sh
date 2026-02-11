@@ -29,10 +29,9 @@ fi
 
 # Add the cron job
 # Note: Agent workflows can take 10-60+ minutes per ticket. A lock file inside
-# check-jira.sh prevents overlapping runs, but a 30-minute interval avoids
-# unnecessary polling while agents are still working.
-echo "Installing cron job (runs every 30 minutes)..."
-(crontab -l 2>/dev/null; echo "*/30 * * * * /bin/zsh $JIRA_SCRIPT >> $SCRIPT_DIR/logs/cron.log 2>&1") | crontab -
+# check-jira.sh prevents overlapping runs.
+echo "Installing cron job (runs every 5 minutes)..."
+(crontab -l 2>/dev/null; echo "*/5 * * * * /bin/zsh $JIRA_SCRIPT >> $SCRIPT_DIR/logs/cron.log 2>&1") | crontab -
 
 echo ""
 echo "✅ Cron job installed!"
@@ -40,7 +39,7 @@ echo ""
 echo "Current crontab:"
 crontab -l | grep "$JIRA_SCRIPT"
 echo ""
-echo "The script will now run automatically every 30 minutes."
+echo "The script will now run automatically every 5 minutes."
 echo "(Agent workflows can take 10-60+ min; a lock file prevents overlapping runs.)"
 echo ""
 echo "Logs are written to: $SCRIPT_DIR/logs/"
