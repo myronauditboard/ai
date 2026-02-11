@@ -28,22 +28,22 @@ Streamlining Development with AI
 
 ### General Audit instructions
 
-- Backend: [instructions-audit.md](https://github.com/myronauditboard/ai/blob/main/backend/.claude/instructions-audit.md)
-- Frontend: [instructions-audit.md](https://github.com/myronauditboard/ai/blob/main/frontend/.claude/instructions-audit.md)
+- Backend: [`instructions-audit.md`](https://github.com/myronauditboard/ai/blob/main/backend/.claude/instructions-audit.md)
+- Frontend: [`instructions-audit.md`](https://github.com/myronauditboard/ai/blob/main/frontend/.claude/instructions-audit.md)
 
 ---
 
 ### LD Deprecation instructions
 
-- Backend: [instructions-epic-SOX-79949.md](https://github.com/myronauditboard/ai/blob/main/backend/.claude/instructions-epic-SOX-79949.md)
-- Frontend: [instructions-epic-SOX-79949.md](https://github.com/myronauditboard/ai/blob/main/frontend/.claude/instructions-epic-SOX-79949.md)
+- Backend: [`instructions-epic-SOX-79949.md`](https://github.com/myronauditboard/ai/blob/main/backend/.claude/instructions-epic-SOX-79949.md)
+- Frontend: [`instructions-epic-SOX-79949.md`](https://github.com/myronauditboard/ai/blob/main/frontend/.claude/instructions-epic-SOX-79949.md)
 
 ---
 
 ### Skills
 
 - Backend: [`start-jira-work/SKILL.md`](https://github.com/myronauditboard/ai/blob/main/backend/.claude/skills/start-jira-work/SKILL.md)
-- Frontend: [start-jira-work/SKILL.md](https://github.com/myronauditboard/ai/blob/main/frontend/.claude/skills/start-jira-work/SKILL.md)
+- Frontend: [`start-jira-work/SKILL.md`](https://github.com/myronauditboard/ai/blob/main/frontend/.claude/skills/start-jira-work/SKILL.md)
 
 ---
 
@@ -73,8 +73,8 @@ Streamlining Development with AI
 
 ### Scripts
 
-- [skills/jira-monitor/check-jira.sh](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/check-jira.sh)
-- [skills/jira-monitor/setup-cron.sh](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/setup-cron.sh)
+- [`skills/jira-monitor/check-jira.sh`](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/check-jira.sh)
+- [`skills/jira-monitor/setup-cron.sh`](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/setup-cron.sh)
 
 ---
 
