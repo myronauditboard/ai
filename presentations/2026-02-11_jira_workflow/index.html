@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Jira Workflow</title>
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/reveal.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/theme/black.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/plugin/highlight/monokai.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+    <section data-markdown="slides.md"
+             data-separator="^\n---\n"
+             data-separator-vertical="^\n--\n"
+             data-separator-notes="^Notes:"
+             data-charset="utf-8">
+    </section>
+  </div>
+</div>
+
+<script src="https://unpkg.com/reveal.js@5/dist/reveal.js"></script>
+<script src="https://unpkg.com/reveal.js@5/plugin/markdown/markdown.js"></script>
+<script src="https://unpkg.com/reveal.js@5/plugin/highlight/highlight.js"></script>
+
+<script>
+  Reveal.initialize({
+    hash: true,
+    plugins: [ RevealMarkdown, RevealHighlight ]
+  });
+</script>
+</body>
+</html>
