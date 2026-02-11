@@ -90,14 +90,14 @@ echo "$RESPONSE" | jq -r '.issues[].key' | while IFS= read -r TICKET_KEY; do
   # Export Jira credentials so the agent can transition tickets via REST API.
   log "Launching agent for $TICKET_KEY in backend..."
   JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
-    "$AGENT_BIN" -p -f --approve-mcps --workspace "$BACKEND_REPO" \
+    "$AGENT_BIN" agent -p -f --approve-mcps --workspace "$BACKEND_REPO" \
     "Start work on Jira ticket $TICKET_KEY" \
     > "$BACKEND_LOG" 2>&1 &
   BACKEND_PID=$!
 
   log "Launching agent for $TICKET_KEY in frontend..."
   JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
-    "$AGENT_BIN" -p -f --approve-mcps --workspace "$FRONTEND_REPO" \
+    "$AGENT_BIN" agent -p -f --approve-mcps --workspace "$FRONTEND_REPO" \
     "Start work on Jira ticket $TICKET_KEY" \
     > "$FRONTEND_LOG" 2>&1 &
   FRONTEND_PID=$!
