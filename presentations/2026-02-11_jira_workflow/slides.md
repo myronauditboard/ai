@@ -1,78 +1,21 @@
 # Jira Workflow
 
-Streamlining Development with Automation
+Streamlining Development with AI
 
 ---
 
 ## Overview
 
-- Jira integration for tracking work
-- Automated workflows
-- Best practices for team collaboration
-
---
-
-### Key Benefits
-
-- Improved visibility into work progress
-- Reduced manual tracking overhead
-- Better alignment between code and tasks
-
+- Goals
+- 
 ---
 
-## Getting Started
+## Goals
 
-Setting up your Jira workflow
-
---
-
-### Prerequisites
-
-- Jira account with appropriate permissions
-- Git repository configured
-- Understanding of your team's workflow
+- Create rules and skills that can be leveraged across thet team
+- Stretch: Hands-off Automated workflows
 
 --
-
-### Configuration Steps
-
-1. Connect Jira to your repository
-2. Set up automation rules
-3. Configure branch naming conventions
-4. Enable smart commits
-
----
-
-## Daily Workflow
-
-How to use Jira effectively
-
---
-
-### Starting Work
-
-```bash
-# Create feature branch from ticket
-git checkout -b feature/PROJ-123-add-login
-```
-
---
-
-### Making Progress
-
-- Update ticket status as you work
-- Add comments with technical details
-- Link PRs to tickets automatically
-
---
-
-### Code Review Process
-
-- Reference ticket numbers in PR descriptions
-- Use smart commits for automatic updates
-- Track review feedback in Jira comments
-
----
 
 ## Automation
 
@@ -90,21 +33,6 @@ scripts/jira-monitor/check-jira.sh
 
 --
 
-### Benefits of Automation
-
-- Automatic status updates
-- Notifications for blockers
-- Time tracking integration
-- Release notes generation
-
----
-
-## Best Practices
-
-Tips for effective Jira usage
-
---
-
 ### Ticket Management
 
 - Keep descriptions clear and actionable
@@ -113,15 +41,6 @@ Tips for effective Jira usage
 - Link related tickets
 
 --
-
-### Communication
-
-- Add meaningful comments with context
-- Tag team members when needed
-- Document decisions in tickets
-- Keep stakeholders informed
-
----
 
 ## Tips
 
@@ -132,8 +51,7 @@ Practical advice for AI-assisted development
 ### AI Model Selection
 
 - Use **Plan mode** with sophisticated models like Opus for complex planning
-- Switch to economical **Agent mode** with Sonnet or Composer for implementation
-- Composer is Elya's favorite for routine tasks
+- Switch to economical **Agent mode** like Sonnet or Composer (Elya's fav) for implementation
 
 --
 
@@ -164,16 +82,30 @@ Slash commands in the Agent chat window:
 
 ### Multi-Project Workflows
 
-Update `auditboard-backend` and `auditboard-frontend` simultaneously:
+It is possible to have one agent work on `auditboard-backend` and `auditboard-frontend` simultaneously:
 
 - Open the parent folder in Cursor
-- Work across both repos in one session
+- Engage AI
 
 ---
 
-## TODO
+## TODOs
 
 Work items and improvements
+
+--
+
+### Cross-Platform AI Tooling
+
+- Port skills and instructions to VSCode Copilot
+- Russell Jones will be releasing SATL (Shared AI Tooling Layer) to automate migration between platforms
+
+--
+
+### Quality & Documentation
+
+- Add E2E tests when necessary and test thoroughly
+- Find and link to more documentation on coding conventions and standards
 
 --
 
@@ -191,13 +123,6 @@ Work items and improvements
 
 --
 
-### Cross-Platform AI Tooling
-
-- Port skills and instructions to VSCode Copilot
-- Explore SATL (Shared AI Tooling Layer) from Russell Jones
-
---
-
 ### Code Organization
 
 - `start-jira-work` task is getting large - break it up further
@@ -210,13 +135,6 @@ Work items and improvements
 - Wire up env to receive Slack messages (waiting on admin authorization)
 - More sample CLI commands
 - Offload tasks to shell scripts or direct API calls where possible
-
---
-
-### Quality & Documentation
-
-- Add E2E tests when necessary and test thoroughly
-- Find and link to more documentation on coding conventions and standards
 
 ---
 
