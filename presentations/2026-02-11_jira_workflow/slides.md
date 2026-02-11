@@ -57,7 +57,7 @@ Streamlining Development with AI
 
 ## Jira-triggered workflow walkthrough
 
-- Assign a Jira ticket to you
+- Hands-free Jira to PR
 - Runs every 10 minutes (easy to customize)
 - Automatically create a PR for every ticket assigned to you and has status `To Do`
 
