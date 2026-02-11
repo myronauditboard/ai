@@ -42,16 +42,16 @@ Streamlining Development with AI
 
 ### Skills
 
-- Backend: [start-jira-work/SKILL.md](https://github.com/myronauditboard/ai/blob/main/backend/.claude/skills/start-jira-work/SKILL.md)
+- Backend: [`start-jira-work/SKILL.md`](https://github.com/myronauditboard/ai/blob/main/backend/.claude/skills/start-jira-work/SKILL.md)
 - Frontend: [start-jira-work/SKILL.md](https://github.com/myronauditboard/ai/blob/main/frontend/.claude/skills/start-jira-work/SKILL.md)
 
 ---
 
 ## Jira-triggered workflow walkthrough
 
-- Assign a Jira ticket to you with status: To Do
+- Assign a Jira ticket to you
 - Runs every 10 minutes (easy to customize)
-- Automatically create a PR
+- Automatically create a PR for every ticket assigned to you and has status `To Do`
 
 ---
 
