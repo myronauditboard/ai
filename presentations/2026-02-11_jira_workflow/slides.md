@@ -40,6 +40,14 @@ Streamlining Development with AI
 
 ---
 
+### More instructions coming to help with clearing out our tech debt
+
+- Typescript Migration
+- Add Missing Tests
+- Remove Deprecated Patterns
+
+---
+
 ### Skills
 
 - Backend: [`start-jira-work/SKILL.md`](https://github.com/myronauditboard/ai/blob/main/backend/.claude/skills/start-jira-work/SKILL.md)
@@ -118,15 +126,7 @@ Practical advice for AI-assisted development
 
 - Minimize token usage
 - Use **Plan mode** with sophisticated models like Opus for complex planning
-- Switch to economical **Agent mode** like Sonnet or Composer (Elya's fav) for implementation
-
----
-
-### Environment Setup
-
-- Grant your IDE/terminal **full disk access** in system preferences
-- Keep **GPG signing** up-to-date for autonomous git operations
-- Properly configured permissions enable seamless automation
+- Switch to economical **Agent mode** like Sonnet, Composer, etc. for implementation
 
 ---
 
@@ -156,6 +156,15 @@ Practical advice for AI-assisted development
 
 ---
 
+### Multi-Project Workflows
+
+It is possible to have one agent work multiple repos simultaneously:
+
+- Open the parent folder in Cursor
+- Engage AI
+
+---
+
 ### Cursor Shortcuts
 
 Slash commands in the Agent chat window:
@@ -165,18 +174,15 @@ Slash commands in the Agent chat window:
 
 ---
 
-### Multi-Project Workflows
+### Environment Setup
 
-It is possible to have one agent work on `auditboard-backend` and `auditboard-frontend` simultaneously:
-
-- Open the parent folder in Cursor
-- Engage AI
+- Grant your IDE/terminal **full disk access** in system preferences
+- Keep **GPG signing** up-to-date for autonomous git operations
+- Properly configured permissions enable seamless automation
 
 ---
 
 ## Future improvements
-
-Work items and improvements
 
 ---
 
