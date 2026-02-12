@@ -62,7 +62,7 @@ Save the updated plan but do NOT commit it.
 
 ### 7. Return to start-jira-work
 
-Once all lint, prettify, and tests pass successfully, return to `.claude/skills/start-jira-work/SKILL.md` Step 4 to create the commit and PR.
+Once all lint, prettify, and tests pass successfully, return to `.claude/skills/start-jira-work/SKILL.md` Step 4 to **automatically** create the commit and PR. Do not ask the user for permission - proceed directly with commit and PR creation.
 
 ---
 

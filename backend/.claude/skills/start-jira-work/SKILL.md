@@ -103,13 +103,19 @@ After looking up the ticket details, analyze the ticket **title**, **description
 
 ## Step 2: Create Branch
 
-Branch naming format:
+**Branch Name**:
+
+**Option 1** (Preferred when launched from check-jira.sh): If the environment variable `BRANCH_NAME` is set, use it directly. This ensures consistent naming across backend and frontend repos.
+
+**Option 2** (Manual runs): If `BRANCH_NAME` is not set, use the centralized `generate-branch-name` skill to get the standardized branch name. Read and follow:
 
 ```
-{TICKET-ID}-{first-30-chars-of-title-with-hyphens}
+/Users/myeung/Development/ai/general/.claude/skills/generate-branch-name/SKILL.md
 ```
 
-Example: `SOX-12345-add-new-compliance-checks`
+This skill will look up the ticket and generate a standardized branch name using the format: `{TICKET-ID}-{first-30-chars-of-sanitized-title}`
+
+Example: `SOX-XXXXX-add-new-compliance-checks`
 
 **Check if branch already exists (required before creating branch):**
 
@@ -119,14 +125,14 @@ Run:
 git fetch origin 2>/dev/null; git branch -a
 ```
 
-If the branch name appears in the output (e.g. `SOX-12345-add-new-compliance-checks` or `remotes/origin/SOX-12345-add-new-compliance-checks`):
+If the branch name appears in the output (e.g. `SOX-XXXXX-add-new-compliance-checks` or `remotes/origin/SOX-XXXXX-add-new-compliance-checks`):
 
 1. **Stop the workflow.** Do not create the branch or continue to Step 3.
-2. **Alert the user** clearly in chat: e.g. "Branch `SOX-12345-add-new-compliance-checks` already exists (locally or on origin). Workflow stopped. Check out the branch to continue existing work, or delete/rename it if you intended to start fresh."
+2. **Alert the user** clearly in chat: e.g. "Branch `SOX-XXXXX-add-new-compliance-checks` already exists (locally or on origin). Workflow stopped. Check out the branch to continue existing work, or delete/rename it if you intended to start fresh."
 3. **Send a Slack warning** if `SLACK_WEBHOOK_URL` is set:
 
 ```bash
-curl -X POST -H 'Content-type: application/json' --data '{"text":"⚠️ start-jira-work: Branch already exists for SOX-12345 – workflow stopped. Branch: SOX-12345-add-new-compliance-checks"}' "$SLACK_WEBHOOK_URL"
+curl -X POST -H 'Content-type: application/json' --data '{"text":"⚠️ start-jira-work: Branch already exists for SOX-XXXXX – workflow stopped. Branch: SOX-XXXXX-add-new-compliance-checks"}' "$SLACK_WEBHOOK_URL"
 ```
 
 Then stop; do not run the branch-creation commands below.
@@ -138,15 +144,11 @@ Commands:
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b SOX-12345-add-new-compliance-checks
+# Use $BRANCH_NAME if set (from check-jira.sh), otherwise use the name from generate-branch-name skill
+git checkout -b "${BRANCH_NAME:-SOX-XXXXX-add-new-compliance-checks}"
 ```
 
-**Truncation rules**:
-
-- Take first 30 characters of title
-- Replace spaces with hyphens
-- Convert to lowercase
-- Remove special characters except hyphens
+Replace `SOX-XXXXX-add-new-compliance-checks` with the actual branch name obtained from Step 2.
 
 ## Step 3: Hand Off to Implementation Workflow
 
@@ -192,7 +194,7 @@ All commits must include a subject line followed by a bullet list of what was do
 Example:
 
 ```
-SOX-12345: Add new compliance checks for quarterly audit
+SOX-XXXXX: Add new compliance checks for quarterly audit
 
 - Add validation for quarterly scope in compliance service
 - Extend API response to include check results
@@ -207,7 +209,7 @@ First commit:
 
 ```bash
 git add .
-git commit -m "SOX-12345: Add new compliance checks for quarterly audit" -m "- Add validation for quarterly scope in compliance service" -m "- Extend API response to include check results" -m "- Add unit tests for new validation logic"
+git commit -m "SOX-XXXXX: Add new compliance checks for quarterly audit" -m "- Add validation for quarterly scope in compliance service" -m "- Extend API response to include check results" -m "- Add unit tests for new validation logic"
 ```
 
 Subsequent commit (no ticket ID in subject):
@@ -267,12 +269,12 @@ When implementation is complete (after completing `.claude/instructions-audit.md
 
 ```bash
 git push -u origin HEAD
-gh pr create --title "SOX-12345: Add new compliance checks" --body "$(cat <<'EOF'
+gh pr create --title "SOX-XXXXX: Add new compliance checks" --body "$(cat <<'EOF'
 ## Summary
 - Brief description of changes
 
 ## Jira Ticket
-SOX-12345
+SOX-XXXXX
 
 ## Test Plan
 - How to test these changes
