@@ -85,7 +85,7 @@ echo "$RESPONSE" | jq -r '.issues[].key' | while IFS= read -r TICKET_KEY; do
   # Generate branch name using the centralized generate-branch-name skill
   # This ensures single source of truth for branch naming logic
   log "Generating branch name using generate-branch-name skill..."
-  BRANCH_NAME_OUTPUT=$("$AGENT_BIN" -p --workspace "$SCRIPT_DIR/../general" \
+  BRANCH_NAME_OUTPUT=$("$AGENT_BIN" -p --workspace "$SCRIPT_DIR/../.." \
     "Use the generate-branch-name skill to generate a branch name for Jira ticket $TICKET_KEY. Return ONLY the branch name, nothing else." 2>&1)
   
   # Extract just the branch name from the output (last non-empty line)
@@ -103,36 +103,56 @@ echo "$RESPONSE" | jq -r '.issues[].key' | while IFS= read -r TICKET_KEY; do
   BACKEND_LOG="$LOG_DIR/${RUN_TIMESTAMP}_${TICKET_KEY}_backend.log"
   FRONTEND_LOG="$LOG_DIR/${RUN_TIMESTAMP}_${TICKET_KEY}_frontend.log"
 
-  # Launch backend and frontend agents in parallel — each agent reads
-  # the start-jira-work skill and handles the full workflow autonomously.
+  # Run agents sequentially (backend, then frontend) to allow real-time interaction.
+  # Each agent reads the start-jira-work skill and handles the full workflow autonomously.
   # Export Jira credentials so the agent can transition tickets via REST API.
   # Also pass BRANCH_NAME so both repos use the same branch name.
-  log "Launching agent for $TICKET_KEY in backend..."
+  
+  echo ""
+  log "========================================="
+  log "BACKEND: Starting agent for $TICKET_KEY"
+  log "========================================="
+  log "Workspace: $BACKEND_REPO"
+  log "Log file: $BACKEND_LOG"
+  echo ""
+  
   JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
     BRANCH_NAME="$BRANCH_NAME" \
     "$AGENT_BIN" -p -f --approve-mcps --workspace "$BACKEND_REPO" \
     "Start work on Jira ticket $TICKET_KEY" \
-    > "$BACKEND_LOG" 2>&1 &
-  BACKEND_PID=$!
+    2>&1 | tee "$BACKEND_LOG"
+  BACKEND_EXIT=${PIPESTATUS[0]}
 
-  log "Launching agent for $TICKET_KEY in frontend..."
+  echo ""
+  log "Backend agent completed with exit code: $BACKEND_EXIT"
+  log "Full backend log saved to: $BACKEND_LOG"
+  echo ""
+  
+  log "========================================="
+  log "FRONTEND: Starting agent for $TICKET_KEY"
+  log "========================================="
+  log "Workspace: $FRONTEND_REPO"
+  log "Log file: $FRONTEND_LOG"
+  echo ""
+  
   JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
     BRANCH_NAME="$BRANCH_NAME" \
     "$AGENT_BIN" -p -f --approve-mcps --workspace "$FRONTEND_REPO" \
     "Start work on Jira ticket $TICKET_KEY" \
-    > "$FRONTEND_LOG" 2>&1 &
-  FRONTEND_PID=$!
+    2>&1 | tee "$FRONTEND_LOG"
+  FRONTEND_EXIT=${PIPESTATUS[0]}
 
-  # Wait for both agents to finish
-  log "Waiting for agents (backend PID=$BACKEND_PID, frontend PID=$FRONTEND_PID)..."
-  wait $BACKEND_PID
-  BACKEND_EXIT=$?
-  wait $FRONTEND_PID
-  FRONTEND_EXIT=$?
-
-  log "Agent results for $TICKET_KEY: backend=$BACKEND_EXIT, frontend=$FRONTEND_EXIT"
-  log "  Backend log:  $BACKEND_LOG"
-  log "  Frontend log: $FRONTEND_LOG"
+  echo ""
+  log "Frontend agent completed with exit code: $FRONTEND_EXIT"
+  log "Full frontend log saved to: $FRONTEND_LOG"
+  echo ""
+  
+  log "========================================="
+  log "Summary for $TICKET_KEY"
+  log "========================================="
+  log "Backend:  exit=$BACKEND_EXIT | log=$BACKEND_LOG"
+  log "Frontend: exit=$FRONTEND_EXIT | log=$FRONTEND_LOG"
+  log "========================================="
   echo ""
 done
 
