@@ -13,7 +13,7 @@ When starting work on a ticket (after branch is created), follow these steps:
 
 ### 1. Create Plan File
 
-Create a plan file at `.claude/plans/plan-{TICKET-ID}-frontend.md` (e.g., `.claude/plans/plan-SOX-12345-frontend.md`). Create the `.claude/plans` folder if it does not exist.
+Create a plan file at `.claude/plans/plan-{TICKET-ID}-frontend.md` (e.g., `.claude/plans/plan-SOX-XXXXX-frontend.md`). Create the `.claude/plans` folder if it does not exist.
 
 The plan should include:
 

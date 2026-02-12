@@ -95,7 +95,7 @@
 
 ### LD deprecation
 
-- Prompt from `auditboard-frontend`: `start-jira-work SOX-81756`
+- Prompt from `auditboard-frontend`: `start-jira-work SOX-XXXXX`
 
 ---
 

@@ -7,7 +7,12 @@ description: Generates a standardized Git branch name from a Jira ticket ID. Thi
 
 **Purpose**: Single source of truth for Git branch naming across all repositories (backend, frontend, etc.). Ensures consistent branch names when working on the same Jira ticket across multiple repos.
 
-**Usage**: Call this skill when you need to generate a branch name for a Jira ticket.
+**Usage**: 
+- Called by `check-jira.sh` script to generate branch names for automated workflows
+- Called by `start-jira-work` skill when `BRANCH_NAME` environment variable is not set
+- Can be called manually when you need to generate a branch name for a Jira ticket
+
+This skill is the authoritative implementation of branch naming logic. All other tools reference this skill rather than implementing their own logic.
 
 ## Input
 
@@ -62,19 +67,23 @@ BRANCH_NAME="${TICKET_KEY}-${BRANCH_SUFFIX}"
 
 ### Step 3: Return Branch Name
 
-Output the final branch name clearly to the user and/or to any calling skill.
+Output the final branch name clearly. 
 
-Example: `SOX-XXXXX-add-compliance-checks`
+**When called from a script or automation**: Return ONLY the branch name on the last line, with no additional text or formatting.
+
+**When called interactively**: You may provide additional context, but ensure the branch name appears clearly.
+
+Example output: `SOX-XXXXX-add-compliance-checks`
 
 ## Examples
 
 ### Example 1: Basic Ticket
 
-**Input**: `SOX-83658`
+**Input**: `SOX-XXXXX`
 
 **Ticket Summary**: "Update compliance report generation for Q1"
 
-**Generated Branch Name**: `SOX-83658-update-compliance-report-ge`
+**Generated Branch Name**: `SOX-XXXXX-update-compliance-report-ge`
 
 (30 chars: "update compliance report ge")
 

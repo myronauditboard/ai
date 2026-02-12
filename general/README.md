@@ -18,7 +18,7 @@ When you need logic or workflows that should be consistent across all repositori
 
 **Format**: `{TICKET-ID}-{first-30-chars-of-sanitized-title}`
 
-**Example**: `SOX-12345-add-compliance-checks`
+**Example**: `SOX-XXXXX-add-compliance-checks`
 
 ## How to Add New Shared Skills
 

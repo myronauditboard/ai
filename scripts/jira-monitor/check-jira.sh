@@ -82,14 +82,34 @@ echo ""
 echo "$RESPONSE" | jq -r '.issues[].key' | while IFS= read -r TICKET_KEY; do
   log "--- Kicking off $TICKET_KEY ---"
 
+  # Generate branch name using the centralized generate-branch-name skill
+  # This ensures single source of truth for branch naming logic
+  log "Generating branch name using generate-branch-name skill..."
+  BRANCH_NAME_OUTPUT=$("$AGENT_BIN" -p --workspace "$SCRIPT_DIR/../general" \
+    "Use the generate-branch-name skill to generate a branch name for Jira ticket $TICKET_KEY. Return ONLY the branch name, nothing else." 2>&1)
+  
+  # Extract just the branch name from the output (last non-empty line)
+  BRANCH_NAME=$(echo "$BRANCH_NAME_OUTPUT" | grep -v '^$' | tail -1 | tr -d '\n\r ')
+  
+  if [[ -z "$BRANCH_NAME" || "$BRANCH_NAME" == *"error"* || "$BRANCH_NAME" == *"Error"* || "$BRANCH_NAME" == *"Authentication"* ]]; then
+    log "Failed to generate branch name for $TICKET_KEY. Output:"
+    log "$BRANCH_NAME_OUTPUT"
+    log "Skipping ticket."
+    continue
+  fi
+  
+  log "Branch name: $BRANCH_NAME"
+
   BACKEND_LOG="$LOG_DIR/${RUN_TIMESTAMP}_${TICKET_KEY}_backend.log"
   FRONTEND_LOG="$LOG_DIR/${RUN_TIMESTAMP}_${TICKET_KEY}_frontend.log"
 
   # Launch backend and frontend agents in parallel — each agent reads
   # the start-jira-work skill and handles the full workflow autonomously.
   # Export Jira credentials so the agent can transition tickets via REST API.
+  # Also pass BRANCH_NAME so both repos use the same branch name.
   log "Launching agent for $TICKET_KEY in backend..."
   JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
+    BRANCH_NAME="$BRANCH_NAME" \
     "$AGENT_BIN" -p -f --approve-mcps --workspace "$BACKEND_REPO" \
     "Start work on Jira ticket $TICKET_KEY" \
     > "$BACKEND_LOG" 2>&1 &
@@ -97,6 +117,7 @@ echo "$RESPONSE" | jq -r '.issues[].key' | while IFS= read -r TICKET_KEY; do
 
   log "Launching agent for $TICKET_KEY in frontend..."
   JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
+    BRANCH_NAME="$BRANCH_NAME" \
     "$AGENT_BIN" -p -f --approve-mcps --workspace "$FRONTEND_REPO" \
     "Start work on Jira ticket $TICKET_KEY" \
     > "$FRONTEND_LOG" 2>&1 &

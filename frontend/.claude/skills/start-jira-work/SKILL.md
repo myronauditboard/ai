@@ -33,11 +33,11 @@ Posting is done via: `curl -X POST -H 'Content-type: application/json' --data '{
 
 ## Step 1: Look Up Jira Ticket
 
-When given a Jira ticket ID (e.g., "SOX-12345"), use the Unblocked data retrieval tool:
+When given a Jira ticket ID (e.g., "SOX-XXXXX"), use the Unblocked data retrieval tool:
 
 ```
 Call: user-unblocked-data_retrieval
-Parameters: { query: "Show me Jira issue SOX-12345" }
+Parameters: { query: "Show me Jira issue SOX-XXXXX" }
 ```
 
 Extract from response:
@@ -93,7 +93,7 @@ After looking up the ticket details, analyze the ticket **title**, **description
    ```
 2. Send a Slack notification (if `SLACK_WEBHOOK_URL` is set):
    ```bash
-   curl -X POST -H 'Content-type: application/json' --data '{"text":"ℹ️ SOX-12345: No frontend work needed — skipping frontend repo."}' "$SLACK_WEBHOOK_URL"
+   curl -X POST -H 'Content-type: application/json' --data '{"text":"ℹ️ SOX-XXXXX: No frontend work needed — skipping frontend repo."}' "$SLACK_WEBHOOK_URL"
    ```
 3. Inform the user in chat: "This ticket does not appear to require frontend changes. Skipping this repo. Work will continue in the backend repo only."
 4. **Stop the workflow.** Do not proceed to Step 2 or beyond.
@@ -106,13 +106,16 @@ After looking up the ticket details, analyze the ticket **title**, **description
 
 **Option 1** (Preferred when launched from check-jira.sh): If the environment variable `BRANCH_NAME` is set, use it directly. This ensures consistent naming across backend and frontend repos.
 
-**Option 2** (Manual runs): If `BRANCH_NAME` is not set, use the centralized `generate-branch-name` skill to get the standardized branch name. Read and follow:
+**Option 2** (Manual runs): If `BRANCH_NAME` is not set, call the `generate-branch-name` skill to get the standardized branch name.
 
-```
-/Users/myeung/Development/ai/general/.claude/skills/generate-branch-name/SKILL.md
-```
+Search for and use the skill named **"generate-branch-name"** which should be available in the workspace or a related shared repository (typically in an `ai/general` directory structure). This skill is the single source of truth for branch naming logic.
 
-This skill will look up the ticket and generate a standardized branch name using the format: `{TICKET-ID}-{first-30-chars-of-sanitized-title}`
+The skill will:
+- Look up the ticket details from Jira
+- Apply the standardized naming convention
+- Return a branch name in the format: `{TICKET-ID}-{sanitized-title}`
+
+Example output: `SOX-XXXXX-add-compliance-checks-for-au`
 
 Example: `SOX-XXXXX-add-new-compliance-checks`
 
@@ -260,7 +263,7 @@ curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
   -d "{\"accountId\":\"$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" "$JIRA_BASE_URL/rest/api/3/myself" | jq -r '.accountId')\"}"
 ```
 
-Replace `{TICKET-ID}` with the actual ticket key (e.g., `SOX-12345`). If the environment variables are not set, skip this step and inform the user that the ticket needs to be manually transitioned.
+Replace `{TICKET-ID}` with the actual ticket key (e.g., `SOX-XXXXX`). If the environment variables are not set, skip this step and inform the user that the ticket needs to be manually transitioned.
 
 ## Step 6: Create Pull Request
 
@@ -318,12 +321,12 @@ On Linux systems, use `xdg-open` instead of `open`.
 
 ## Complete Example
 
-**Input**: "SOX-83661"
+**Input**: "SOX-XXXXX"
 
 **Step 1 - Look up**:
 
 ```
-user-unblocked-data_retrieval query: "Show me Jira issue SOX-83661"
+user-unblocked-data_retrieval query: "Show me Jira issue SOX-XXXXX"
 ```
 
 Response shows:
@@ -335,12 +338,12 @@ Response shows:
 
 **Step 1.5 - Check relevance**: The ticket title mentions "owner dashboard" and the description references UI tracking and Amplitude events. This requires frontend component changes. Proceed with frontend work.
 
-**Step 2 - Create branch**: Check `git branch -a` for `SOX-83661-add-control-assessment-role`. If it exists, stop, alert the user, and optionally post to Slack; do not create the branch. If it does not exist:
+**Step 2 - Create branch**: Check `git branch -a` for `SOX-XXXXX-add-control-assessment-role`. If it exists, stop, alert the user, and optionally post to Slack; do not create the branch. If it does not exist:
 
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b SOX-83661-add-control-assessment-role
+git checkout -b SOX-XXXXX-add-control-assessment-role
 ```
 
 **Step 3 - Implement** (follow `.claude/instructions-audit.md` workflow)
@@ -349,7 +352,7 @@ git checkout -b SOX-83661-add-control-assessment-role
 
 ```bash
 git add .
-git commit -m "SOX-83661: Add control assessment role tracking to owner dashboard" -m "- Add controlAssessmentRole to Amplitude tracking for owner dashboard task clicks" -m "- Derive user role from compliance assessment item assignments"
+git commit -m "SOX-XXXXX: Add control assessment role tracking to owner dashboard" -m "- Add controlAssessmentRole to Amplitude tracking for owner dashboard task clicks" -m "- Derive user role from compliance assessment item assignments"
 ```
 
 **Step 5 - Update ticket**: Assign to current user and move to "In Progress" via Unblocked
@@ -358,13 +361,13 @@ git commit -m "SOX-83661: Add control assessment role tracking to owner dashboar
 
 ```bash
 git push -u origin HEAD
-gh pr create --title "SOX-83661: Add control assessment role tracking to owner dashboard" --body "$(cat <<'EOF'
+gh pr create --title "SOX-XXXXX: Add control assessment role tracking to owner dashboard" --body "$(cat <<'EOF'
 ## Summary
 - Add controlAssessmentRole to Amplitude tracking for owner dashboard task clicks
 - Derive user role from compliance assessment item assignments
 
 ## Jira Ticket
-SOX-83661
+SOX-XXXXX
 
 ## Test Plan
 - Run unit tests: `pnpm test`
@@ -375,7 +378,7 @@ EOF
 )"
 ```
 
-Then append the PR URL to the end of `.claude/plans/plan-SOX-83661-frontend.md` (from `gh pr create` output or `gh pr view --json url -q .url`). If `SLACK_WEBHOOK_URL` is set, post "✅ PR ready: {url}" to Slack.
+Then append the PR URL to the end of `.claude/plans/plan-SOX-XXXXX-frontend.md` (from `gh pr create` output or `gh pr view --json url -q .url`). If `SLACK_WEBHOOK_URL` is set, post "✅ PR ready: {url}" to Slack.
 
 **Step 7 - Open PR in browser**:
 
