@@ -26,7 +26,7 @@ When you need logic or workflows that should be consistent across all repositori
 2. Add the `SKILL.md` file with the skill logic
 3. Reference the skill from other repositories using the full path:
    ```
-   /Users/myeung/Development/ai/general/.claude/skills/{skill-name}/SKILL.md
+   /Users/myeung/Development/ai/shared/.claude/skills/{skill-name}/SKILL.md
    ```
 4. Update this README with documentation about the new skill
 

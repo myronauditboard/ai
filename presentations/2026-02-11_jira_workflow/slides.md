@@ -63,29 +63,29 @@
 
 ### How to set up the workflow
 
-- One time: `$ ai/scripts/jira-monitor/check-jira.sh`
-- Set up cron job: `$ ai/scripts/jira-monitor/setup-cron.sh`
+- One time: `$ ai/shared/scripts/jira-monitor/check-jira.sh`
+- Set up cron job: `$ ai/shared/scripts/jira-monitor/setup-cron.sh`
 
 ---
 
 ### Keeping tabs on the workflow
 
 - Check that it is running: `$ crontab -l | grep check-jira`
-- Realtime logging: `$ tail -f ai/scripts/jira-monitor/logs/cron.log`
+- Realtime logging: `$ tail -f ai/shared/scripts/jira-monitor/logs/cron.log`
 
 ---
 
 ### Keeping tabs on the workflow
 
-- Logs: `$ ls -lt /Users/myeung/Development/ai/scripts/jira-monitor/logs/`
+- Logs: `$ ls -lt /Users/myeung/Development/ai/shared/scripts/jira-monitor/logs/`
 - Remove cron job: `$ crontab -l | grep -v 'check-jira.sh' | crontab -`
 
 ---
 
 ### Scripts
 
-- [`skills/jira-monitor/check-jira.sh`](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/check-jira.sh)
-- [`skills/jira-monitor/setup-cron.sh`](https://github.com/myronauditboard/ai/blob/main/scripts/jira-monitor/setup-cron.sh)
+- [`shared/scripts/jira-monitor/check-jira.sh`](https://github.com/myronauditboard/ai/blob/main/shared/scripts/jira-monitor/check-jira.sh)
+- [`shared/scripts/jira-monitor/setup-cron.sh`](https://github.com/myronauditboard/ai/blob/main/shared/scripts/jira-monitor/setup-cron.sh)
 
 ---
 

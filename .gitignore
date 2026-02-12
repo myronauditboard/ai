@@ -1,2 +1,2 @@
 # Jira monitor logs
-scripts/jira-monitor/logs/
+*.log
