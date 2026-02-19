@@ -1,6 +1,6 @@
 ---
 name: generate-branch-name
-description: Generates a standardized Git branch name from a Jira ticket ID. Single source of truth for branch naming. Format {TICKET-ID}-{sanitized-title}; entire branch name max 30 characters. Ticket ID unchanged; title lowercased, non-alphanumeric → hyphen, then truncate full string to 30 chars.
+description: Generates a standardized Git branch name from a Jira ticket ID. Single source of truth for branch naming. Format {TICKET-ID}-{sanitized-title}; entire branch name max 40 characters. Ticket ID unchanged; title lowercased, non-alphanumeric → hyphen, then truncate full string to 40 chars.
 ---
 
 # Generate Branch Name
@@ -26,7 +26,7 @@ Returns a standardized branch name in the format:
 {TICKET-ID}-{sanitized-title}
 ```
 
-Example: `SOX-81757-launchdarkly-flag-de` (30 characters total)
+Example: `SOX-81757-launchdarkly-flag-deprecate-an` (40 characters total)
 
 ## Process
 
@@ -49,11 +49,11 @@ Apply these steps in order:
 - **B.** **Ticket ID is unchanged**: use it exactly as given (e.g. `SOX-81757`). Add a single dash after it.
 - **C.** **Sanitize the full Jira title**: (1) lowercase everything, (2) replace any character that is not alphanumeric (`a-z`, `0-9`) with a hyphen, (3) collapse consecutive hyphens into one, (4) strip leading and trailing hyphens. This gives the suffix.
 - **D.** Form the branch name as `{TICKET-ID}-{suffix}`. If the suffix is empty, use **only** `{TICKET-ID}` (no trailing hyphen).
-- **E.** **Truncate the entire branch name** to **at most 30 characters**. The total length of the final branch name (including ticket ID and dash) must be ≤ 30. Truncation may cut the suffix mid-word; that's acceptable.
+- **E.** **Truncate the entire branch name** to **at most 40 characters**. The total length of the final branch name (including ticket ID and dash) must be ≤ 40. Truncation may cut the suffix mid-word; that's acceptable.
 
-So: ID stays, one dash, then sanitized title suffix, then truncate the whole thing to 30 chars. Do not truncate the raw title first.
+So: ID stays, one dash, then sanitized title suffix, then truncate the whole thing to 40 chars. Do not truncate the raw title first.
 
-**Bash implementation** (reference): sanitize full title, then form full branch name, then truncate entire string to 30 chars.
+**Bash implementation** (reference): sanitize full title, then form full branch name, then truncate entire string to 40 chars.
 
 ```bash
 BRANCH_SUFFIX=$(echo "$TICKET_SUMMARY" | 
@@ -63,7 +63,7 @@ BRANCH_SUFFIX=$(echo "$TICKET_SUMMARY" |
   sed 's/^-//' | 
   sed 's/-$//')
 BRANCH_NAME="${TICKET_KEY}-${BRANCH_SUFFIX}"
-BRANCH_NAME="${BRANCH_NAME:0:30}"
+BRANCH_NAME="${BRANCH_NAME:0:40}"
 ```
 
 ### Step 3: Return Branch Name
@@ -72,7 +72,7 @@ BRANCH_NAME="${BRANCH_NAME:0:30}"
 
 **When called interactively**: You may provide additional context, but ensure the branch name appears clearly.
 
-Example output: `SOX-81757-launchdarkly-flag-de`
+Example output: `SOX-81757-launchdarkly-flag-deprecate-an`
 
 ## Examples
 
@@ -82,9 +82,9 @@ Example output: `SOX-81757-launchdarkly-flag-de`
 
 **Title**: "LaunchDarkly Flag: Deprecate annotate-results-without-annotations"
 
-**Steps**: Lowercase → non-alphanumeric becomes dash → "launchdarkly-flag-deprecate-annotate-results-without-annotations"; prefix "SOX-81757-"; full name exceeds 30 chars, so truncate to 30 total.
+**Steps**: Lowercase → non-alphanumeric becomes dash → "launchdarkly-flag-deprecate-annotate-results-without-annotations"; prefix "SOX-81757-"; full name exceeds 40 chars, so truncate to 40 total.
 
-**Branch name**: `SOX-81757-launchdarkly-flag-de` (30 characters)
+**Branch name**: `SOX-81757-launchdarkly-flag-deprecate-an` (40 characters)
 
 ### Example 2: Basic Ticket
 
@@ -92,7 +92,7 @@ Example output: `SOX-81757-launchdarkly-flag-de`
 
 **Ticket Summary**: "Update compliance report generation for Q1"
 
-**Generated Branch Name**: `SOX-XXXXX-update-compliance-re` (30 chars total; suffix truncated)
+**Generated Branch Name**: `SOX-XXXXX-update-compliance-report-gener` (40 chars total; suffix truncated)
 
 ### Example 3: Ticket with Special Characters
 
@@ -100,7 +100,7 @@ Example output: `SOX-81757-launchdarkly-flag-de`
 
 **Ticket Summary**: "Add new compliance checks [URGENT] (Phase 2)"
 
-**Generated Branch Name**: `SOX-XXXXX-add-new-compliance` (30 chars total; special characters become hyphens, then truncated)
+**Generated Branch Name**: `SOX-XXXXX-add-new-compliance-checks-urge` (40 chars total; special characters become hyphens, title lowercased, then truncated)
 
 ### Example 4: Short Ticket
 
@@ -108,7 +108,7 @@ Example output: `SOX-81757-launchdarkly-flag-de`
 
 **Ticket Summary**: "Fix bug"
 
-**Generated Branch Name**: `SOX-999-fix-bug` (entire branch under 30 chars)
+**Generated Branch Name**: `SOX-999-fix-bug` (entire branch under 40 chars)
 
 ## Integration with Other Skills
 
@@ -125,10 +125,10 @@ Then use the returned branch name when creating the branch.
 ## Key Rules
 
 1. **Always use this skill** for branch naming to ensure consistency
-2. **Entire branch name at most 30 characters** (including ticket ID and dash)
+2. **Entire branch name at most 40 characters** (including ticket ID and dash)
 3. **Lowercase only** for the title/suffix part
 4. **Hyphens as separators** (no spaces or special characters; non-alphanumeric → hyphen)
-5. **Format**: `{TICKET-ID}-{sanitized-title}` then truncate to 30 chars
+5. **Format**: `{TICKET-ID}-{sanitized-title}` then truncate to 40 chars
 
 ## Edge Cases
 
