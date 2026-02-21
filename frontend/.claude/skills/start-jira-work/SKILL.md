@@ -33,7 +33,11 @@ Posting is done via: `curl -X POST -H 'Content-type: application/json' --data '{
 
 ## Step 1: Look Up Jira Ticket
 
-When given a Jira ticket ID (e.g., "SOX-XXXXX"), use the Unblocked data retrieval tool:
+When given a Jira ticket ID (e.g., "SOX-XXXXX"):
+
+**If `TICKET_TITLE` and `TICKET_DESCRIPTION` are set** (e.g. when launched from check-jira.sh with `REPO_NEEDED=true`), use those values and skip the Unblocked lookup. You may still need to fetch **Status**, **Assignee**, and **Epic** via Unblocked if the workflow requires them later.
+
+**Otherwise**, use the Unblocked data retrieval tool:
 
 ```
 Call: user-unblocked-data_retrieval
@@ -65,24 +69,12 @@ Epic-specific instructions may:
 
 ## Step 1.5: Check if Frontend Work is Needed
 
-After looking up the ticket details, analyze the ticket **title**, **description**, and any **epic context** to determine whether this ticket requires changes in the **frontend** repository.
+**If `REPO_NEEDED` is set to `true`** (e.g. when launched from check-jira.sh after the shared check-jira skill already determined this repo needs work), skip this step and proceed to Step 2.
 
-**Indicators that frontend work IS needed:**
+**If `REPO_NEEDED` is not set** (manual or standalone run), determine whether this ticket requires frontend changes:
 
-- UI changes, component updates, styling, or layout changes
-- Frontend route or page changes
-- Client-side logic, state management, hooks, or context changes
-- Frontend tests, Storybook stories
-- Changes to user-facing behavior, interactions, or copy
-- Amplitude/analytics tracking added or modified on the frontend
-- Frontend configuration or environment variable changes
-
-**Indicators that frontend work is NOT needed:**
-
-- Pure API/endpoint changes, database migrations, model changes
-- Backend-only business logic, services, or workers
-- Server-side configuration or infrastructure changes
-- Backend-only test changes
+1. Read the indicator file: **`.claude/indicators.md`** in this repository. It lists what constitutes frontend work vs. not.
+2. Analyze the ticket **title**, **description**, and any **epic context** against those indicators.
 
 **If the ticket clearly does NOT require frontend work:**
 

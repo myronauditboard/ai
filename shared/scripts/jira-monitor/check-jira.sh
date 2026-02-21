@@ -3,13 +3,14 @@
 # =============================================================================
 # check-jira.sh
 #
-# Polls Jira for "To Do" tickets assigned to the current user and launches
-# Cursor Agent CLI (headless) in both auditboard-backend and auditboard-frontend
-# repos to execute the start-jira-work skill for each ticket.
+# Polls Jira for "To Do" tickets assigned to the current user. For each ticket:
+# 1. Generates a branch name (generate-branch-name skill)
+# 2. Determines which repos need changes (check-jira skill: backend-only, frontend-only, or both)
+# 3. Launches Cursor Agent CLI only in those repos to run start-jira-work.
 #
-# The skill itself handles everything: Jira lookup, branch creation,
-# implementation, commits, status transition, PR creation, etc.
-# This script is just the orchestrator that finds tickets and kicks off agents.
+# The start-jira-work skill handles branch creation, implementation, commits,
+# status transition, PR creation, etc. This script finds tickets and kicks off
+# only the relevant repo agents.
 # =============================================================================
 
 # ---- CONFIG: Jira ----
@@ -30,6 +31,8 @@ AGENT_BIN="/Users/myeung/.local/bin/agent"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/logs"
 LOCK_FILE="$SCRIPT_DIR/.check-jira.lock"
+# AI repo root (parent of shared/) — needed so check-jira skill can read backend/ and frontend/ indicator files
+AI_REPO_ROOT="$SCRIPT_DIR/../../.."
 
 # =============================================================================
 # LOCK FILE — prevent overlapping runs (agent workflows can take 10-60+ min)
@@ -100,58 +103,77 @@ echo "$RESPONSE" | jq -r '.issues[].key' | while IFS= read -r TICKET_KEY; do
   
   log "Branch name: $BRANCH_NAME"
 
+  # Determine which repos need work using the shared check-jira skill
+  log "Determining which repos need changes (check-jira skill)..."
+  DECISION_OUTPUT=$("$AGENT_BIN" -p --workspace "$AI_REPO_ROOT" \
+    "Use the check-jira skill to determine which repos need changes for Jira ticket $TICKET_KEY. Return ONLY the decision: backend-only, frontend-only, or both." 2>&1)
+
+  DECISION=$(echo "$DECISION_OUTPUT" | grep -v '^$' | tail -1 | tr -d '\n\r ')
+
+  case "$DECISION" in
+    backend-only|frontend-only|both) ;;
+    *) log "Unrecognized decision '$DECISION', defaulting to 'both'"; DECISION="both" ;;
+  esac
+  log "Decision: $DECISION"
+
   BACKEND_LOG="$LOG_DIR/${RUN_TIMESTAMP}_${TICKET_KEY}_backend.log"
   FRONTEND_LOG="$LOG_DIR/${RUN_TIMESTAMP}_${TICKET_KEY}_frontend.log"
+  BACKEND_EXIT=""
+  FRONTEND_EXIT=""
 
-  # Run agents sequentially (backend, then frontend) to allow real-time interaction.
-  # Each agent reads the start-jira-work skill and handles the full workflow autonomously.
-  # Export Jira credentials so the agent can transition tickets via REST API.
-  # Also pass BRANCH_NAME so both repos use the same branch name.
-  
-  echo ""
-  log "========================================="
-  log "BACKEND: Starting agent for $TICKET_KEY"
-  log "========================================="
-  log "Workspace: $BACKEND_REPO"
-  log "Log file: $BACKEND_LOG"
-  echo ""
-  
-  JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
-    BRANCH_NAME="$BRANCH_NAME" \
-    "$AGENT_BIN" -p -f --approve-mcps --workspace "$BACKEND_REPO" \
-    "Start work on Jira ticket $TICKET_KEY" \
-    2>&1 | tee "$BACKEND_LOG"
-  BACKEND_EXIT=${PIPESTATUS[0]}
+  # Run agents only for repos that need work. REPO_NEEDED=true so start-jira-work skips its own relevance check.
+  if [[ "$DECISION" == "backend-only" || "$DECISION" == "both" ]]; then
+    echo ""
+    log "========================================="
+    log "BACKEND: Starting agent for $TICKET_KEY"
+    log "========================================="
+    log "Workspace: $BACKEND_REPO"
+    log "Log file: $BACKEND_LOG"
+    echo ""
 
-  echo ""
-  log "Backend agent completed with exit code: $BACKEND_EXIT"
-  log "Full backend log saved to: $BACKEND_LOG"
-  echo ""
-  
-  log "========================================="
-  log "FRONTEND: Starting agent for $TICKET_KEY"
-  log "========================================="
-  log "Workspace: $FRONTEND_REPO"
-  log "Log file: $FRONTEND_LOG"
-  echo ""
-  
-  JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
-    BRANCH_NAME="$BRANCH_NAME" \
-    "$AGENT_BIN" -p -f --approve-mcps --workspace "$FRONTEND_REPO" \
-    "Start work on Jira ticket $TICKET_KEY" \
-    2>&1 | tee "$FRONTEND_LOG"
-  FRONTEND_EXIT=${PIPESTATUS[0]}
+    JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
+      BRANCH_NAME="$BRANCH_NAME" REPO_NEEDED="true" \
+      "$AGENT_BIN" -p -f --approve-mcps --workspace "$BACKEND_REPO" \
+      "Start work on Jira ticket $TICKET_KEY" \
+      2>&1 | tee "$BACKEND_LOG"
+    BACKEND_EXIT=${PIPESTATUS[0]}
 
-  echo ""
-  log "Frontend agent completed with exit code: $FRONTEND_EXIT"
-  log "Full frontend log saved to: $FRONTEND_LOG"
-  echo ""
-  
+    echo ""
+    log "Backend agent completed with exit code: $BACKEND_EXIT"
+    log "Full backend log saved to: $BACKEND_LOG"
+    echo ""
+  else
+    log "Skipping backend (not needed for this ticket)."
+  fi
+
+  if [[ "$DECISION" == "frontend-only" || "$DECISION" == "both" ]]; then
+    log "========================================="
+    log "FRONTEND: Starting agent for $TICKET_KEY"
+    log "========================================="
+    log "Workspace: $FRONTEND_REPO"
+    log "Log file: $FRONTEND_LOG"
+    echo ""
+
+    JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
+      BRANCH_NAME="$BRANCH_NAME" REPO_NEEDED="true" \
+      "$AGENT_BIN" -p -f --approve-mcps --workspace "$FRONTEND_REPO" \
+      "Start work on Jira ticket $TICKET_KEY" \
+      2>&1 | tee "$FRONTEND_LOG"
+    FRONTEND_EXIT=${PIPESTATUS[0]}
+
+    echo ""
+    log "Frontend agent completed with exit code: $FRONTEND_EXIT"
+    log "Full frontend log saved to: $FRONTEND_LOG"
+    echo ""
+  else
+    log "Skipping frontend (not needed for this ticket)."
+  fi
+
   log "========================================="
   log "Summary for $TICKET_KEY"
   log "========================================="
-  log "Backend:  exit=$BACKEND_EXIT | log=$BACKEND_LOG"
-  log "Frontend: exit=$FRONTEND_EXIT | log=$FRONTEND_LOG"
+  log "Backend:  exit=${BACKEND_EXIT:-skipped} | log=$BACKEND_LOG"
+  log "Frontend: exit=${FRONTEND_EXIT:-skipped} | log=$FRONTEND_LOG"
   log "========================================="
   echo ""
 done
