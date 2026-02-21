@@ -1,12 +1,8 @@
-# General - Shared Skills and Utilities
+# Shared Skills and Utilities
 
-This directory contains shared skills and utilities that are used across multiple repositories (backend, frontend, etc.).
+Skills and scripts used across multiple repositories (backend, frontend, etc.). Single source of truth for shared logic.
 
-## Purpose
-
-When you need logic or workflows that should be consistent across all repositories, place them here as skills. This ensures a single source of truth and prevents divergence.
-
-## Skills
+## Skills (`.claude/skills/`)
 
 ### `generate-branch-name`
 
@@ -14,25 +10,28 @@ When you need logic or workflows that should be consistent across all repositori
 
 **Purpose**: Generates standardized Git branch names from Jira ticket IDs.
 
-**Usage**: Called by `start-jira-work` skills in backend and frontend repos to ensure consistent branch naming across all repositories working on the same ticket.
+**Usage**: Called by `check-jira.sh` and by `start-jira-work` in backend/frontend when `BRANCH_NAME` is not set.
 
-**Format**: `{TICKET-ID}-{first-30-chars-of-sanitized-title}`
+**Format**: `{TICKET-ID}-{sanitized-title}` with the **entire** branch name truncated to **40 characters** (ticket ID unchanged; title lowercased, non-alphanumeric → hyphen, then truncate).
 
-**Example**: `SOX-XXXXX-add-compliance-checks`
+**Example**: `SOX-81757-launchdarkly-flag-deprecate-an`
 
-## How to Add New Shared Skills
+### `check-jira`
 
-1. Create a new skill directory under `.claude/skills/`
-2. Add the `SKILL.md` file with the skill logic
-3. Reference the skill from other repositories using the full path:
-   ```
-   /Users/myeung/Development/ai/shared/.claude/skills/{skill-name}/SKILL.md
-   ```
-4. Update this README with documentation about the new skill
+**Location**: `.claude/skills/check-jira/SKILL.md`
 
-## Benefits
+**Purpose**: Decides which repos (backend-only, frontend-only, or both) need changes for a Jira ticket.
 
-- **Single Source of Truth**: Logic defined once, used everywhere
-- **Consistency**: All repos follow the same patterns and rules
-- **Maintainability**: Update one place, all repos benefit
-- **Discoverability**: Clear location for shared utilities
+**Usage**: Called by `check-jira.sh` before launching backend/frontend agents. Reads `backend/.claude/indicators.md` and `frontend/.claude/indicators.md` from the ai repo.
+
+**Output**: One of `backend-only`, `frontend-only`, `both`.
+
+## Scripts
+
+**[scripts/jira-monitor/](scripts/jira-monitor/README.md)** – Polls Jira for your To Do tickets, generates branch names, runs the check-jira skill, and launches agents only in repos that need work. See that README for prerequisites, `--dry-run`, and cron setup.
+
+## How to add a new shared skill
+
+1. Create `.claude/skills/<skill-name>/SKILL.md` with the skill logic and frontmatter.
+2. Reference it from scripts (e.g. `check-jira.sh` uses `AI_REPO_ROOT` so the agent can read `shared/.claude/skills/...`) or from other repos by path.
+3. Document the skill in this README.
