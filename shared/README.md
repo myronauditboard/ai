@@ -16,9 +16,9 @@ Skills and scripts used across multiple repositories (backend, frontend, etc.). 
 
 **Example**: `SOX-81757-launchdarkly-flag-deprecate-an`
 
-### `check-jira`
+### `determine-repos`
 
-**Location**: `.claude/skills/check-jira/SKILL.md`
+**Location**: `.claude/skills/determine-repos/SKILL.md`
 
 **Purpose**: Decides which repos (backend-only, frontend-only, or both) need changes for a Jira ticket.
 
@@ -28,7 +28,7 @@ Skills and scripts used across multiple repositories (backend, frontend, etc.). 
 
 ## Scripts
 
-**[scripts/jira-monitor/](scripts/jira-monitor/README.md)** – Polls Jira for your To Do tickets, generates branch names, runs the check-jira skill, and launches agents only in repos that need work. See that README for prerequisites, `--dry-run`, and cron setup.
+**[scripts/jira-monitor/](scripts/jira-monitor/README.md)** – Two-script flow: **poll-jira.sh** discovers your To Do tickets and invokes **check-jira.sh** per ticket; check-jira.sh validates the ticket, checks branches via GitHub CLI, runs the determine-repos skill, then backend then frontend agents. See that README for prerequisites, `--dry-run`, and launchd/cron setup.
 
 ## How to add a new shared skill
 

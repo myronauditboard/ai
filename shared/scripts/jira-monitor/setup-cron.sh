@@ -1,9 +1,9 @@
 #!/bin/zsh
 
-# Schedules check-jira.sh to run every 5 minutes via cron. check-jira.sh polls Jira
-# for To Do tickets, generates branch names, decides which repos need work (check-jira
-# skill), skips when the branch already exists, and launches backend/frontend agents
-# only when needed. See check-jira.sh and shared/.claude/skills/ for details.
+# Schedules poll-jira.sh to run every 5 minutes via cron. poll-jira.sh discovers To Do
+# tickets and invokes check-jira.sh per ticket; check-jira.sh validates, checks branches
+# via GH, uses determine-repos skill, and runs backend/frontend agents. See poll-jira.sh,
+# check-jira.sh, and shared/.claude/skills/ for details.
 #
 # On macOS: cron runs without a graphical session, so the Cursor Agent fails with
 # "Security command failed" (exit 195). Use setup-launchd.sh instead; it runs the
@@ -19,17 +19,18 @@ if [[ "$(uname)" == Darwin ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-JIRA_SCRIPT="$SCRIPT_DIR/check-jira.sh"
+JIRA_SCRIPT="$SCRIPT_DIR/poll-jira.sh"
 LOG_DIR="$SCRIPT_DIR/logs"
 
 # Ensure logs directory exists (cron redirect writes to logs/cron.log before the script runs)
 mkdir -p "$LOG_DIR"
 
-# Make sure check-jira.sh is executable
+# Make sure scripts are executable
 chmod +x "$JIRA_SCRIPT"
+chmod +x "$SCRIPT_DIR/check-jira.sh"
 
 # Dry-run: validate Jira config, agent binary, and repo paths without processing tickets
-echo "Running check-jira.sh --dry-run..."
+echo "Running poll-jira.sh --dry-run..."
 if ! "$JIRA_SCRIPT" --dry-run; then
   echo ""
   echo "❌ Dry-run failed. Please fix the issues above and run setup again."
@@ -47,7 +48,7 @@ if crontab -l 2>/dev/null | grep -q "$JIRA_SCRIPT"; then
 fi
 
 # Add the cron job
-# Agent workflows can take 10-60+ min per ticket. A lock file in check-jira.sh prevents overlapping runs.
+# Agent workflows can take 10-60+ min per ticket. A lock file in poll-jira.sh prevents overlapping runs.
 echo "Installing cron job (runs every 5 minutes)..."
 (crontab -l 2>/dev/null; echo "*/5 * * * * /bin/zsh -c 'source ~/.zshrc && $JIRA_SCRIPT' >> $LOG_DIR/cron.log 2>&1") | crontab -
 
@@ -60,7 +61,7 @@ echo ""
 echo "The script will now run automatically every 5 minutes."
 echo "(Agent workflows can take 10-60+ min; a lock file prevents overlapping runs.)"
 echo ""
-echo "Logs: $LOG_DIR/ (check-jira output also in $LOG_DIR/<timestamp>_<ticket>_backend.log, etc.)"
+echo "Logs: $LOG_DIR/ (check-jira.sh output also in $LOG_DIR/<timestamp>_<ticket>_backend.log, etc.)"
 echo ""
 echo "To remove the cron job later:"
-echo "  crontab -l | grep -v 'check-jira.sh' | crontab -"
+echo "  crontab -l | grep -v 'poll-jira.sh' | crontab -"

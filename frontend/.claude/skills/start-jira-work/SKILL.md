@@ -26,7 +26,6 @@ This skill orchestrates the complete workflow for a Jira ticket:
 To receive Slack messages, set `SLACK_WEBHOOK_URL` (e.g. in `.env` or your shell) to a [Slack Incoming Webhook](https://api.slack.com/messaging/webhooks) URL. The agent will:
 
 - Post an **info** message when the ticket does not require frontend work (and stop the workflow)
-- Post a **warning** when the branch already exists (and stop the workflow)
 - Post **PR ready** with the PR URL when the pull request is created
 
 Posting is done via: `curl -X POST -H 'Content-type: application/json' --data '{"text":"<message>"}' "$SLACK_WEBHOOK_URL"` (skip if `SLACK_WEBHOOK_URL` is unset).
@@ -69,7 +68,7 @@ Epic-specific instructions may:
 
 ## Step 1.5: Check if Frontend Work is Needed
 
-**If `REPO_NEEDED` is set to `true`** (e.g. when launched from check-jira.sh after the shared check-jira skill already determined this repo needs work), skip this step and proceed to Step 2.
+**If `REPO_NEEDED` is set to `true`** (e.g. when launched from check-jira.sh after the shared determine-repos skill already determined this repo needs work), skip this step and proceed to Step 2.
 
 **If `REPO_NEEDED` is not set** (manual or standalone run), determine whether this ticket requires frontend changes:
 
@@ -111,27 +110,7 @@ Example output: `SOX-XXXXX-add-compliance-checks-for-au`
 
 Example: `SOX-XXXXX-add-new-compliance-checks`
 
-**Check if branch already exists (required before creating branch):**
-
-Run:
-
-```bash
-git fetch origin 2>/dev/null; git branch -a
-```
-
-If the branch name appears in the output (e.g. `SOX-XXXXX-add-new-compliance-checks` or `remotes/origin/SOX-XXXXX-add-new-compliance-checks`):
-
-1. **Stop the workflow.** Do not create the branch or continue to Step 3.
-2. **Alert the user** clearly in chat: e.g. "Branch `SOX-XXXXX-add-new-compliance-checks` already exists (locally or on origin). Workflow stopped. Check out the branch to continue existing work, or delete/rename it if you intended to start fresh."
-3. **Send a Slack warning** if `SLACK_WEBHOOK_URL` is set:
-
-```bash
-curl -X POST -H 'Content-type: application/json' --data '{"text":"⚠️ start-jira-work: Branch already exists for SOX-XXXXX – workflow stopped. Branch: SOX-XXXXX-add-new-compliance-checks"}' "$SLACK_WEBHOOK_URL"
-```
-
-Then stop; do not run the branch-creation commands below.
-
-**If the branch does not exist**, proceed with:
+**Note:** When launched from check-jira.sh, branch existence is already checked via GitHub CLI; the script only invokes this workflow when the branch does not exist. For manual runs, create the branch as below.
 
 Commands:
 

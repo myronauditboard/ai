@@ -1,6 +1,6 @@
 ---
 name: indicators
-description: Criteria for whether a Jira ticket requires frontend changes. Lists indicators that frontend work IS needed (UI, routes, state, Storybook, analytics, etc.) and is NOT needed (pure API, DB, backend services, etc.). Referenced by the shared check-jira skill and by start-jira-work when running standalone.
+description: Criteria for whether a Jira ticket requires frontend changes. Lists indicators that frontend work IS needed (UI, routes, state, Storybook, analytics, etc.) and is NOT needed (pure API, DB, backend services, etc.). Referenced by the shared determine-repos skill and by start-jira-work when running standalone.
 ---
 
 # Frontend Work Indicators
