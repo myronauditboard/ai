@@ -70,37 +70,59 @@ BRANCH_NAME=$("$SCRIPT_DIR/generate-branch-name.sh" "$TICKET_KEY" "$TICKET_SUMMA
 log "[$TICKET_KEY] Branch name: $BRANCH_NAME"
 
 # =============================================================================
-# Step 3: GH branch existence check — if branch exists in either repo, open PR/branch page and exit
+# Step 3: Branch existence check (remote via GH API + local via git)
 # =============================================================================
 BACKEND_BRANCH_EXISTS=0
 FRONTEND_BRANCH_EXISTS=0
+BACKEND_BRANCH_SOURCE=""
+FRONTEND_BRANCH_SOURCE=""
+
 if gh api "repos/$BACKEND_GH_REPO/branches/$BRANCH_NAME" --silent 2>/dev/null; then
   BACKEND_BRANCH_EXISTS=1
+  BACKEND_BRANCH_SOURCE="remote"
+elif git -C "$BACKEND_REPO" rev-parse --verify "$BRANCH_NAME" &>/dev/null; then
+  BACKEND_BRANCH_EXISTS=1
+  BACKEND_BRANCH_SOURCE="local"
 fi
+
 if gh api "repos/$FRONTEND_GH_REPO/branches/$BRANCH_NAME" --silent 2>/dev/null; then
   FRONTEND_BRANCH_EXISTS=1
+  FRONTEND_BRANCH_SOURCE="remote"
+elif git -C "$FRONTEND_REPO" rev-parse --verify "$BRANCH_NAME" &>/dev/null; then
+  FRONTEND_BRANCH_EXISTS=1
+  FRONTEND_BRANCH_SOURCE="local"
 fi
 
 if [[ "$BACKEND_BRANCH_EXISTS" -eq 1 || "$FRONTEND_BRANCH_EXISTS" -eq 1 ]]; then
-  log "[$TICKET_KEY] Branch $BRANCH_NAME already exists in one or both repos. Opening PR or branch page; no new work started."
+  log "[$TICKET_KEY] Branch $BRANCH_NAME already exists. No new work started."
   if [[ "$BACKEND_BRANCH_EXISTS" -eq 1 ]]; then
-    PR_URL=$(gh pr list --head "$BRANCH_NAME" -R "$BACKEND_GH_REPO" --json url -q '.[0].url' 2>/dev/null || true)
-    if [[ -n "$PR_URL" ]]; then
-      open "$PR_URL"
-      log "[$TICKET_KEY] Opened backend PR: $PR_URL"
+    log "[$TICKET_KEY] Backend branch found ($BACKEND_BRANCH_SOURCE)."
+    if [[ "$BACKEND_BRANCH_SOURCE" == "remote" ]]; then
+      PR_URL=$(gh pr list --head "$BRANCH_NAME" -R "$BACKEND_GH_REPO" --json url -q '.[0].url' 2>/dev/null || true)
+      if [[ -n "$PR_URL" ]]; then
+        open "$PR_URL"
+        log "[$TICKET_KEY] Opened backend PR: $PR_URL"
+      else
+        open "https://github.com/$BACKEND_GH_REPO/tree/$BRANCH_NAME"
+        log "[$TICKET_KEY] No backend PR found; opened remote branch page."
+      fi
     else
-      open "https://github.com/$BACKEND_GH_REPO/tree/$BRANCH_NAME"
-      log "[$TICKET_KEY] No backend PR found; opened branch page."
+      log "[$TICKET_KEY] Backend branch is local-only (not pushed). May be from a previous incomplete run."
     fi
   fi
   if [[ "$FRONTEND_BRANCH_EXISTS" -eq 1 ]]; then
-    PR_URL=$(gh pr list --head "$BRANCH_NAME" -R "$FRONTEND_GH_REPO" --json url -q '.[0].url' 2>/dev/null || true)
-    if [[ -n "$PR_URL" ]]; then
-      open "$PR_URL"
-      log "[$TICKET_KEY] Opened frontend PR: $PR_URL"
+    log "[$TICKET_KEY] Frontend branch found ($FRONTEND_BRANCH_SOURCE)."
+    if [[ "$FRONTEND_BRANCH_SOURCE" == "remote" ]]; then
+      PR_URL=$(gh pr list --head "$BRANCH_NAME" -R "$FRONTEND_GH_REPO" --json url -q '.[0].url' 2>/dev/null || true)
+      if [[ -n "$PR_URL" ]]; then
+        open "$PR_URL"
+        log "[$TICKET_KEY] Opened frontend PR: $PR_URL"
+      else
+        open "https://github.com/$FRONTEND_GH_REPO/tree/$BRANCH_NAME"
+        log "[$TICKET_KEY] No frontend PR found; opened remote branch page."
+      fi
     else
-      open "https://github.com/$FRONTEND_GH_REPO/tree/$BRANCH_NAME"
-      log "[$TICKET_KEY] No frontend PR found; opened branch page."
+      log "[$TICKET_KEY] Frontend branch is local-only (not pushed). May be from a previous incomplete run."
     fi
   fi
   log "[$TICKET_KEY] Exiting (branch already exists)."
@@ -112,7 +134,7 @@ fi
 # =============================================================================
 log "[$TICKET_KEY] Invoking determine-repos skill..."
 AGENT_RC=0
-DECISION_OUTPUT=$("$AGENT_BIN" -p --workspace "$AI_REPO_ROOT" \
+DECISION_OUTPUT=$("$AGENT_BIN" -p -f --workspace "$AI_REPO_ROOT" \
   "Use the determine-repos skill to determine which repos need changes for Jira ticket $TICKET_KEY. Return ONLY the decision: backend-only, frontend-only, or both." 2>&1) || AGENT_RC=$?
 
 if [[ "$AGENT_RC" -ne 0 ]]; then
