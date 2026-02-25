@@ -4,7 +4,7 @@
 # check-jira.sh
 #
 # Polls Jira for "To Do" tickets assigned to the current user. For each ticket:
-# 1. Generates a branch name (generate-branch-name skill)
+# 1. Generates a branch name (generate-branch-name.sh script)
 # 2. Determines which repos need changes (check-jira skill: backend-only, frontend-only, or both)
 # 3. Launches Cursor Agent CLI only in those repos to run start-jira-work.
 #
@@ -78,6 +78,12 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
     FAIL=1
   elif [[ ! -f "$AI_REPO_ROOT/shared/.claude/skills/check-jira/SKILL.md" ]]; then
     echo "[$(date)] ❌ AI repo missing check-jira skill: $AI_REPO_ROOT/shared/.claude/skills/check-jira/SKILL.md"
+    FAIL=1
+  fi
+
+  BRANCH_SCRIPT="$SCRIPT_DIR/generate-branch-name.sh"
+  if [[ ! -x "$BRANCH_SCRIPT" ]]; then
+    echo "[$(date)] ❌ Branch name script not executable or missing: $BRANCH_SCRIPT"
     FAIL=1
   fi
 
@@ -163,28 +169,13 @@ log "[Jira] Found $COUNT ticket(s): $TICKET_KEYS"
 log "[Jira] Starting processing."
 echo ""
 
-# Iterate through each ticket
-echo "$RESPONSE" | jq -r '.issues[].key' | while IFS= read -r TICKET_KEY; do
+# Iterate through each ticket (key and summary from Jira response; summary normalized to one line for parsing)
+echo "$RESPONSE" | jq -r '.issues[] | [.key, ((.fields.summary // "") | gsub("\n"; " ") | gsub("\t"; " "))] | @tsv' | while IFS=$'\t' read -r TICKET_KEY TICKET_SUMMARY; do
   log "[$TICKET_KEY] ---------- Starting ticket ----------"
 
-  # Invoke the generate-branch-name skill (agent may print extra text; we parse the result next)
-  log "[$TICKET_KEY] [1/3] Branch name: invoking generate-branch-name agent (workspace=$SCRIPT_DIR/../..)"
-  BRANCH_START=$(date +%s)
-  BRANCH_NAME_OUTPUT=$("$AGENT_BIN" -p --workspace "$SCRIPT_DIR/../.." \
-    "Use the generate-branch-name skill to generate a branch name for Jira ticket $TICKET_KEY. Return ONLY the branch name, nothing else." 2>&1)
-  BRANCH_END=$(date +%s)
-  log "[$TICKET_KEY] [1/3] Branch name: agent finished in $((BRANCH_END - BRANCH_START))s"
-
-  # Parse agent output: use the last non-empty line as the branch name (skill asks for only the name, but output may include preamble)
-  BRANCH_NAME=$(echo "$BRANCH_NAME_OUTPUT" | grep -v '^$' | tail -1 | tr -d '\n\r ')
-  
-  if [[ -z "$BRANCH_NAME" || "$BRANCH_NAME" == *"error"* || "$BRANCH_NAME" == *"Error"* || "$BRANCH_NAME" == *"Authentication"* ]]; then
-    log "[$TICKET_KEY] [1/3] Branch name: FAILED. Output:"
-    log "$BRANCH_NAME_OUTPUT"
-    log "[$TICKET_KEY] Skipping ticket (branch name generation failed)."
-    continue
-  fi
-  log "[$TICKET_KEY] [1/3] Branch name: $BRANCH_NAME"
+  # Generate branch name via script (deterministic; no agent call)
+  BRANCH_NAME=$("$SCRIPT_DIR/generate-branch-name.sh" "$TICKET_KEY" "$TICKET_SUMMARY")
+  log "[$TICKET_KEY] [1/3] Branch name: $BRANCH_NAME (from script)"
 
   # Check if branch already exists in each repo (avoid launching agents that would immediately exit)
   log "[$TICKET_KEY] [1/3] Branch exists check: fetching and listing branches in backend and frontend repos..."

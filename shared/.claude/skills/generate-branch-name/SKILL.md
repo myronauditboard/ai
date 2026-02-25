@@ -1,143 +1,70 @@
 ---
 name: generate-branch-name
-description: Generates a standardized Git branch name from a Jira ticket ID. Single source of truth for branch naming. Format {TICKET-ID}-{sanitized-title}; entire branch name max 40 characters. Ticket ID unchanged; title lowercased, non-alphanumeric → hyphen, then truncate full string to 40 chars.
+description: Gets a standardized Git branch name for a Jira ticket. Prefer running the script shared/scripts/jira-monitor/generate-branch-name.sh (single implementation); fallback to same logic if script unavailable. Format {TICKET-ID}-{sanitized-title}, max 40 chars, no trailing hyphen.
 ---
 
 # Generate Branch Name
 
-**Purpose**: Single source of truth for Git branch naming across all repositories (backend, frontend, etc.). Ensures consistent branch names when working on the same Jira ticket across multiple repos.
+**Purpose**: Return a standardized branch name for a Jira ticket so all repos use the same name. The **single implementation** is the script `shared/scripts/jira-monitor/generate-branch-name.sh`. This skill tells the agent how to call it (or replicate it when unavailable).
 
-**Usage**: 
-- Called by `check-jira.sh` script to generate branch names for automated workflows
-- Called by `start-jira-work` skill when `BRANCH_NAME` environment variable is not set
-- Can be called manually when you need to generate a branch name for a Jira ticket
-
-This skill is the authoritative implementation of branch naming logic. All other tools reference this skill rather than implementing their own logic.
+**Usage**:
+- **Monitor** (`check-jira.sh`): Uses the script only; no agent.
+- **Agent** (e.g. manual "start work on SOX-123" when `BRANCH_NAME` is not set): Use this skill — get the ticket summary, then run the script with key and summary; use the script output as the branch name.
 
 ## Input
 
-- **Jira Ticket ID**: e.g., "SOX-XXXXX"
+- **Jira Ticket ID**: e.g. `SOX-84649`
 
 ## Output
 
-Returns a standardized branch name in the format:
-
-```
-{TICKET-ID}-{sanitized-title}
-```
-
-Example: `SOX-81757-launchdarkly-flag-deprecate-an` (40 characters total)
+Exactly one line: the branch name (e.g. `SOX-84649-references-to-enabling-soxhub`). No preamble, no quotes. When called from automation, the last line of your response must be the branch name only.
 
 ## Process
 
-Follow this order exactly. Do not respond with a question or request for the ticket summary; always fetch the summary via the Jira/Unblocked lookup below and then apply the algorithm.
+### Step 1: Get the ticket summary
 
-### Step 1: Look Up Jira Ticket
+Use the **Jira issue Summary (title) field only**. Do not use description or other text.
 
-Use Unblocked to get the ticket summary. Query: "Jira issue {TICKET-ID}" (or "Show me Jira issue {TICKET-ID}"). Extract the **Summary/Title** from the response.
+- **If `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` are set:** Fetch via Jira REST API:
+  ```bash
+  curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+    "$JIRA_BASE_URL/rest/api/3/issue/{TICKET-ID}?fields=summary" | jq -r '.fields.summary // ""'
+  ```
+- **Otherwise:** Use Unblocked: "Show me Jira issue {TICKET-ID}" and extract **only** the issue Summary/Title. Do not use description or other sections.
 
-```
-Call: user-unblocked-data_retrieval
-Parameters: { query: "Show me Jira issue {TICKET-ID}" }
-```
+### Step 2: Run the script (preferred)
 
-### Step 2: Generate Branch Name
-
-Apply these steps in order:
-
-- **A.** You have the ticket **summary/title** from Step 1.
-- **B.** **Ticket ID is unchanged**: use it exactly as given (e.g. `SOX-81757`). Add a single dash after it.
-- **C.** **Sanitize the full Jira title**: (1) lowercase everything, (2) replace any character that is not alphanumeric (`a-z`, `0-9`) with a hyphen, (3) collapse consecutive hyphens into one, (4) strip leading and trailing hyphens. This gives the suffix.
-- **D.** Form the branch name as `{TICKET-ID}-{suffix}`. If the suffix is empty, use **only** `{TICKET-ID}` (no trailing hyphen).
-- **E.** **Truncate the entire branch name** to **at most 40 characters**. The total length of the final branch name (including ticket ID and dash) must be ≤ 40. Truncation may cut the suffix mid-word; that's acceptable.
-
-So: ID stays, one dash, then sanitized title suffix, then truncate the whole thing to 40 chars. Do not truncate the raw title first.
-
-**Bash implementation** (reference): sanitize full title, then form full branch name, then truncate entire string to 40 chars.
+If the script is available (e.g. workspace root is or contains the ai repo, so `shared/scripts/jira-monitor/generate-branch-name.sh` or `ai/shared/scripts/jira-monitor/generate-branch-name.sh` exists and is executable):
 
 ```bash
-BRANCH_SUFFIX=$(echo "$TICKET_SUMMARY" | 
-  tr '[:upper:]' '[:lower:]' | 
-  sed 's/[^a-z0-9]/-/g' | 
-  sed 's/-\+/-/g' | 
-  sed 's/^-//' | 
-  sed 's/-$//')
-BRANCH_NAME="${TICKET_KEY}-${BRANCH_SUFFIX}"
-BRANCH_NAME="${BRANCH_NAME:0:40}"
+/path/to/generate-branch-name.sh "{TICKET-ID}" "{SUMMARY}"
 ```
 
-### Step 3: Return Branch Name
+Use the script’s output as the branch name. **Do not** modify or re-sanitize it.
 
-**When called from a script or automation**: Emit **exactly one line**: the branch name. No preamble, no explanation, no "Here is the branch name:", no markdown, no quotes. No other lines before or after—the last line must be the branch name.
+### Step 3: Fallback when the script is not available
 
-**When called interactively**: You may provide additional context, but ensure the branch name appears clearly.
+If you cannot run the script (path not found or not executable), implement the same logic as the script. The authoritative behavior is in `shared/scripts/jira-monitor/generate-branch-name.sh`:
 
-Example output: `SOX-81757-launchdarkly-flag-deprecate-an`
+- Sanitize summary: lowercase, non-alphanumeric → hyphen, collapse hyphens, strip leading/trailing hyphens.
+- If suffix is empty, branch name = `{TICKET-ID}` only.
+- Else: `{TICKET-ID}-{suffix}`, truncate to 40 characters, then strip a trailing hyphen if present (so the name never ends with `-`).
 
-## Examples
-
-### Example 1: SOX-81757 (LaunchDarkly flag)
-
-**Ticket**: [SOX-81757](https://auditboard.atlassian.net/browse/SOX-81757)
-
-**Title**: "LaunchDarkly Flag: Deprecate annotate-results-without-annotations"
-
-**Steps**: Lowercase → non-alphanumeric becomes dash → "launchdarkly-flag-deprecate-annotate-results-without-annotations"; prefix "SOX-81757-"; full name exceeds 40 chars, so truncate to 40 total.
-
-**Branch name**: `SOX-81757-launchdarkly-flag-deprecate-an` (40 characters)
-
-### Example 2: Basic Ticket
-
-**Input**: `SOX-XXXXX`
-
-**Ticket Summary**: "Update compliance report generation for Q1"
-
-**Generated Branch Name**: `SOX-XXXXX-update-compliance-report-gener` (40 chars total; suffix truncated)
-
-### Example 3: Ticket with Special Characters
-
-**Input**: `SOX-XXXXX`
-
-**Ticket Summary**: "Add new compliance checks [URGENT] (Phase 2)"
-
-**Generated Branch Name**: `SOX-XXXXX-add-new-compliance-checks-urge` (40 chars total; special characters become hyphens, title lowercased, then truncated)
-
-### Example 4: Short Ticket
-
-**Input**: `SOX-999`
-
-**Ticket Summary**: "Fix bug"
-
-**Generated Branch Name**: `SOX-999-fix-bug` (entire branch under 40 chars)
-
-## Integration with Other Skills
-
-Other skills (like `start-jira-work`) should call this skill to get the branch name:
-
-```markdown
-Before creating a branch, call the generate-branch-name skill to get the standardized name:
-
-"Use the generate-branch-name skill to get the branch name for ticket {TICKET-ID}"
-
-Then use the returned branch name when creating the branch.
-```
+Output that branch name.
 
 ## Key Rules
 
-1. **Always use this skill** for branch naming to ensure consistency
-2. **Entire branch name at most 40 characters** (including ticket ID and dash)
-3. **Lowercase only** for the title/suffix part
-4. **Hyphens as separators** (no spaces or special characters; non-alphanumeric → hyphen)
-5. **Format**: `{TICKET-ID}-{sanitized-title}` then truncate to 40 chars
+1. **Prefer the script** — Run `generate-branch-name.sh` with ticket key and summary whenever the script path is available.
+2. **Summary from Jira** — Use Jira REST API when env vars are set; otherwise Unblocked. Use only the issue Summary/Title field.
+3. **Max 40 chars, no trailing hyphen** — The script enforces this; if you implement the fallback, do the same.
 
 ## Edge Cases
 
-- **No summary / empty summary:** Branch name = `{TICKET-ID}` only.
-- **Summary is only special characters after sanitization:** Branch name = `{TICKET-ID}` only.
-- **Ticket lookup fails:** Do not invent a name; return an error or signal failure. Do not output a meta-sentence (e.g. "I need the ticket summary") as the last line.
+- **Empty summary:** Branch name = `{TICKET-ID}` only.
+- **Lookup fails:** Do not invent a name; return an error. Do not output a meta-sentence as the branch name.
 
 ## Troubleshooting
 
-**Cannot find ticket**: Verify ticket ID format and ensure you have access to the Jira integration via Unblocked.
+**Wrong branch name:** Ensure you use the Jira API for the summary when credentials are set; Unblocked may return description or an old title.
 
-**Ticket has no summary**: Use just the ticket ID as the branch name: `{TICKET-ID}`
+**Script not found:** Resolve the path from the workspace (e.g. `ai/shared/scripts/jira-monitor/` or `shared/scripts/jira-monitor/`). If truly unavailable, use the fallback logic above and match the script’s behavior.

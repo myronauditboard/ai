@@ -144,6 +144,8 @@ git checkout -b "${BRANCH_NAME:-SOX-XXXXX-add-new-compliance-checks}"
 
 Replace `SOX-XXXXX-add-new-compliance-checks` with the actual branch name obtained from Step 2.
 
+**When launched from check-jira.sh (`REPO_NEEDED` set):** Right after creating the branch, perform **Step 5 (Update Ticket in Jira)** now—move the ticket to "In Progress" and set assignee via Jira REST API. Doing this early ensures the ticket status is updated even if the run is interrupted later. Then continue to Step 3.
+
 ## Step 3: Hand Off to Implementation Workflow
 
 **Consult the appropriate instructions files:**
@@ -171,7 +173,9 @@ The main instructions file will guide you through:
 
 Once the workflow is complete and all tests pass, return here to Step 4.
 
-## Step 4: Create First Commit
+## Step 4: Create First Commit (mandatory)
+
+**Do not skip this step.** When there are implementation changes, you must commit them before creating the PR. Run `git status`; if there are changes to commit, run `git add .` and `git commit` with the format below. If there are no changes, report that and continue to Step 6 (push/PR if branch was already committed).
 
 All commits must include a subject line followed by a bullet list of what was done in that commit.
 
@@ -221,18 +225,25 @@ git commit -m "Fix lint errors in compliance validation" -m "- Apply prettier to
 
 ## Step 5: Update Ticket in Jira
 
-After starting work, update the Jira ticket to assign it to the current user and move it to "In Progress".
+**If you already performed this step right after Step 2** (when `REPO_NEEDED` was set), skip and go to Step 6.
 
-**Method 1 — Unblocked (preferred when available):**
+Otherwise: after starting work, update the Jira ticket to assign it to the current user and move it to "In Progress".
+
+**When to use which method:**
+
+- **When `REPO_NEEDED` is set** (launched from check-jira.sh / launchd) or when **`JIRA_BASE_URL`, `JIRA_EMAIL`, and `JIRA_API_TOKEN` are set**: You **must** use the Jira REST API (Method 2). Unblocked is not available in headless/CLI mode and will not work. Do not attempt Unblocked in this context.
+- **When running interactively** and Jira env vars are not set: Prefer Unblocked (Method 1); fall back to Method 2 if Unblocked is unavailable.
+
+**Method 1 — Unblocked (interactive only):**
 
 Use Unblocked tools to:
 
 1. **Assign the ticket** to the current user (the person running this workflow)
 2. **Move the ticket** to "In Progress"
 
-**Method 2 — Jira REST API (fallback for headless/CLI mode):**
+**Method 2 — Jira REST API (use when headless or when JIRA_* env vars are set):**
 
-If Unblocked tools are not available (e.g., running in headless CLI mode), use the Jira REST API directly. The environment variables `JIRA_BASE_URL`, `JIRA_EMAIL`, and `JIRA_API_TOKEN` must be set.
+Use the Jira REST API. The environment variables `JIRA_BASE_URL`, `JIRA_EMAIL`, and `JIRA_API_TOKEN` must be set (they are set by check-jira.sh).
 
 ```bash
 # 1. Get available transitions
@@ -257,7 +268,9 @@ curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
 
 Replace `{TICKET-ID}` with the actual ticket key (e.g., `SOX-XXXXX`). If the environment variables are not set, skip this step and inform the user that the ticket needs to be manually transitioned.
 
-## Step 6: Create Pull Request
+## Step 6: Create Pull Request (mandatory)
+
+**Do not skip this step.** When implementation is complete and changes are committed, you must push the branch and create the PR. Do not end the workflow without pushing and running `gh pr create` (or reporting the PR URL if the PR already exists). If `gh pr create` fails, report the error and retry once (e.g. network or rate limit); if it still fails, report and stop.
 
 When implementation is complete (after completing `.claude/instructions-audit.md` workflow):
 
@@ -380,14 +393,16 @@ open "$(gh pr view --json url -q .url)"
 
 ## Key Rules
 
-1. **Base branch**: Always `develop`, never `main`
-2. **All commits**: Subject line + bullet list of what was done in that commit
-3. **First commit**: Subject starts with full ticket ID and title
-4. **Subsequent commits**: Do NOT include ticket ID in subject
-5. **No agent attribution**: Never add Co-authored-by tags
-6. **Branch naming**: Ticket ID + first 30 chars of title
-7. **PR body**: Must have Summary, Jira link, Test Plan
-8. **Ticket updates**: Assign to current user and move to "In Progress" when starting
+1. **Jira updates when headless**: When `REPO_NEEDED` is set or `JIRA_BASE_URL`/`JIRA_EMAIL`/`JIRA_API_TOKEN` are set, always use the Jira REST API (Method 2) for Step 5; do not use Unblocked.
+2. **Base branch**: Always `develop`, never `main`
+3. **All commits**: Subject line + bullet list of what was done in that commit
+4. **First commit**: Subject starts with full ticket ID and title
+5. **Subsequent commits**: Do NOT include ticket ID in subject
+6. **No agent attribution**: Never add Co-authored-by tags
+7. **Branch naming**: Ticket ID + first 30 chars of title
+8. **PR body**: Must have Summary, Jira link, Test Plan
+9. **Ticket updates**: Assign to current user and move to "In Progress" when starting (Step 5); do not skip; use REST API when headless.
+10. **Commit and PR**: Do not end the workflow without committing changes and creating the PR when there are code changes.
 
 ## Troubleshooting
 
@@ -395,4 +410,4 @@ open "$(gh pr view --json url -q .url)"
 
 **Branch already exists**: The workflow now checks for this before creating the branch. If the branch exists (locally or on origin), the agent stops, alerts you in chat, and optionally posts a warning to Slack. Check out the existing branch to continue work, or delete/rename it to start fresh.
 
-**PR creation fails**: Ensure branch is pushed first with `git push -u origin HEAD`.
+**PR creation fails**: Ensure branch is pushed first with `git push -u origin HEAD`. If the agent skipped the commit or PR step, re-run the workflow or manually commit, push, and run `gh pr create`; the skill requires committing and creating the PR and should not be skipped.

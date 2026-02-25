@@ -6,6 +6,10 @@
 #
 # Same behavior as setup-cron: check-jira.sh runs every 5 min. See check-jira.sh
 # and shared/.claude/skills/ for details.
+#
+# Ensure JIRA_URL, JIRA_EMAIL, and JIRA_API_TOKEN are exported in ~/.zshrc so
+# the agent can update Jira status (To Do → In Progress) via the REST API when
+# running headless under launchd.
 
 set -e
 
