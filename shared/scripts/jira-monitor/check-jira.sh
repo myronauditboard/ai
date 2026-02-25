@@ -111,8 +111,16 @@ fi
 # Step 4: Repo relevance decision — determine-repos skill
 # =============================================================================
 log "[$TICKET_KEY] Invoking determine-repos skill..."
+AGENT_RC=0
 DECISION_OUTPUT=$("$AGENT_BIN" -p --workspace "$AI_REPO_ROOT" \
-  "Use the determine-repos skill to determine which repos need changes for Jira ticket $TICKET_KEY. Return ONLY the decision: backend-only, frontend-only, or both." 2>&1)
+  "Use the determine-repos skill to determine which repos need changes for Jira ticket $TICKET_KEY. Return ONLY the decision: backend-only, frontend-only, or both." 2>&1) || AGENT_RC=$?
+
+if [[ "$AGENT_RC" -ne 0 ]]; then
+  log "[$TICKET_KEY] ERROR: determine-repos agent exited with code $AGENT_RC"
+  log "[$TICKET_KEY] Agent output (last 30 lines):"
+  echo "$DECISION_OUTPUT" | tail -30
+fi
+
 DECISION=$(echo "$DECISION_OUTPUT" | grep -oE 'backend-only|frontend-only|both' | tail -1)
 if [[ -z "$DECISION" ]]; then
   log "[$TICKET_KEY] Could not parse determine-repos output; defaulting to 'both'"
@@ -130,12 +138,15 @@ if [[ "$RUN_BACKEND" == "yes" ]]; then
   log "[$TICKET_KEY] Running backend agent (start-jira-work)..."
   RUN_TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
   BACKEND_LOG="$LOG_DIR/${RUN_TIMESTAMP}_${TICKET_KEY}_backend.log"
+  AGENT_RC=0
   JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
     BRANCH_NAME="$BRANCH_NAME" REPO_NEEDED="true" TICKET_TITLE="$TICKET_SUMMARY" \
     "$AGENT_BIN" -p -f --approve-mcps --workspace "$BACKEND_REPO" \
     "Start work on Jira ticket $TICKET_KEY" \
-    2>&1 | tee "$BACKEND_LOG" || true
-  # Open PR page if we're in the backend repo and a PR exists for this branch
+    2>&1 | tee "$BACKEND_LOG" || AGENT_RC=$?
+  if [[ "$AGENT_RC" -ne 0 ]]; then
+    log "[$TICKET_KEY] WARNING: backend agent exited with code $AGENT_RC. See $BACKEND_LOG"
+  fi
   PR_URL=$(gh pr list --head "$BRANCH_NAME" -R "$BACKEND_GH_REPO" --json url -q '.[0].url' 2>/dev/null || true)
   if [[ -n "$PR_URL" ]]; then
     open "$PR_URL"
@@ -151,11 +162,15 @@ if [[ "$RUN_FRONTEND" == "yes" ]]; then
   log "[$TICKET_KEY] Running frontend agent (start-jira-work)..."
   RUN_TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
   FRONTEND_LOG="$LOG_DIR/${RUN_TIMESTAMP}_${TICKET_KEY}_frontend.log"
+  AGENT_RC=0
   JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
     BRANCH_NAME="$BRANCH_NAME" REPO_NEEDED="true" TICKET_TITLE="$TICKET_SUMMARY" \
     "$AGENT_BIN" -p -f --approve-mcps --workspace "$FRONTEND_REPO" \
     "Start work on Jira ticket $TICKET_KEY" \
-    2>&1 | tee "$FRONTEND_LOG" || true
+    2>&1 | tee "$FRONTEND_LOG" || AGENT_RC=$?
+  if [[ "$AGENT_RC" -ne 0 ]]; then
+    log "[$TICKET_KEY] WARNING: frontend agent exited with code $AGENT_RC. See $FRONTEND_LOG"
+  fi
   PR_URL=$(gh pr list --head "$BRANCH_NAME" -R "$FRONTEND_GH_REPO" --json url -q '.[0].url' 2>/dev/null || true)
   if [[ -n "$PR_URL" ]]; then
     open "$PR_URL"
