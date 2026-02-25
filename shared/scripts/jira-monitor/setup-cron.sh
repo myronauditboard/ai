@@ -4,9 +4,19 @@
 # for To Do tickets, generates branch names, decides which repos need work (check-jira
 # skill), skips when the branch already exists, and launches backend/frontend agents
 # only when needed. See check-jira.sh and shared/.claude/skills/ for details.
+#
+# On macOS: cron runs without a graphical session, so the Cursor Agent fails with
+# "Security command failed" (exit 195). Use setup-launchd.sh instead; it runs the
+# same script every 5 min in your user session. On Linux or headless setups without
+# the agent, cron is fine.
 
 echo "=== Jira Monitor Cron Setup ==="
 echo ""
+if [[ "$(uname)" == Darwin ]]; then
+  echo "⚠️  macOS detected. Cron has no graphical session; the Cursor Agent will fail."
+  echo "   Use ./setup-launchd.sh instead for a working schedule."
+  echo ""
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 JIRA_SCRIPT="$SCRIPT_DIR/check-jira.sh"
