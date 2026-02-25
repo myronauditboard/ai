@@ -38,8 +38,59 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/logs"
 AI_REPO_ROOT="$SCRIPT_DIR/../../.."
 
+STALL_TIMEOUT=${STALL_TIMEOUT:-1200}  # kill agent after 20 min with no output
+MAX_RUNTIME=${MAX_RUNTIME:-7200}      # kill agent after 120 min total
+
 log() {
   echo "[$(date)] $1"
+}
+
+# run_agent LOG_FILE COMMAND...
+# Runs COMMAND in background, streams output to LOG_FILE and stdout, and
+# watches for stalls (no new output) or max runtime exceeded.
+# Returns the agent's exit code, or 143 if killed by the watchdog.
+run_agent() {
+  local log_file="$1"; shift
+
+  : > "$log_file"
+  "$@" > "$log_file" 2>&1 &
+  local agent_pid=$!
+
+  tail -f "$log_file" &
+  local tail_pid=$!
+
+  local start_time=$SECONDS
+  local last_size=0
+  local last_change=$SECONDS
+
+  while kill -0 $agent_pid 2>/dev/null; do
+    sleep 15
+    local cur_size=$(wc -c < "$log_file" 2>/dev/null || echo 0)
+    if [[ "$cur_size" -ne "$last_size" ]]; then
+      last_size=$cur_size
+      last_change=$SECONDS
+    fi
+
+    local stall=$(( SECONDS - last_change ))
+    local runtime=$(( SECONDS - start_time ))
+
+    if [[ $stall -ge $STALL_TIMEOUT ]]; then
+      log "Watchdog: agent (PID $agent_pid) stalled for ${stall}s. Killing."
+      kill $agent_pid 2>/dev/null
+      break
+    fi
+    if [[ $runtime -ge $MAX_RUNTIME ]]; then
+      log "Watchdog: agent (PID $agent_pid) exceeded max runtime (${runtime}s). Killing."
+      kill $agent_pid 2>/dev/null
+      break
+    fi
+  done
+
+  wait $agent_pid 2>/dev/null
+  local rc=$?
+  kill $tail_pid 2>/dev/null
+  wait $tail_pid 2>/dev/null
+  return $rc
 }
 
 mkdir -p "$LOG_DIR"
@@ -161,11 +212,11 @@ if [[ "$RUN_BACKEND" == "yes" ]]; then
   RUN_TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
   BACKEND_LOG="$LOG_DIR/${RUN_TIMESTAMP}_${TICKET_KEY}_backend.log"
   AGENT_RC=0
-  JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
+  run_agent "$BACKEND_LOG" env \
+    JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
     BRANCH_NAME="$BRANCH_NAME" REPO_NEEDED="true" TICKET_TITLE="$TICKET_SUMMARY" \
     "$AGENT_BIN" -p -f --approve-mcps --workspace "$BACKEND_REPO" \
-    "Start work on Jira ticket $TICKET_KEY" \
-    2>&1 | tee "$BACKEND_LOG" || AGENT_RC=$?
+    "Start work on Jira ticket $TICKET_KEY" || AGENT_RC=$?
   if [[ "$AGENT_RC" -ne 0 ]]; then
     log "[$TICKET_KEY] WARNING: backend agent exited with code $AGENT_RC. See $BACKEND_LOG"
   fi
@@ -185,11 +236,11 @@ if [[ "$RUN_FRONTEND" == "yes" ]]; then
   RUN_TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
   FRONTEND_LOG="$LOG_DIR/${RUN_TIMESTAMP}_${TICKET_KEY}_frontend.log"
   AGENT_RC=0
-  JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
+  run_agent "$FRONTEND_LOG" env \
+    JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
     BRANCH_NAME="$BRANCH_NAME" REPO_NEEDED="true" TICKET_TITLE="$TICKET_SUMMARY" \
     "$AGENT_BIN" -p -f --approve-mcps --workspace "$FRONTEND_REPO" \
-    "Start work on Jira ticket $TICKET_KEY" \
-    2>&1 | tee "$FRONTEND_LOG" || AGENT_RC=$?
+    "Start work on Jira ticket $TICKET_KEY" || AGENT_RC=$?
   if [[ "$AGENT_RC" -ne 0 ]]; then
     log "[$TICKET_KEY] WARNING: frontend agent exited with code $AGENT_RC. See $FRONTEND_LOG"
   fi
