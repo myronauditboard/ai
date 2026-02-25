@@ -1,2 +1,5 @@
 # Jira monitor logs
 *.log
+
+# Lock files
+*.lock
