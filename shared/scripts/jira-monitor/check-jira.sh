@@ -131,6 +131,16 @@ log "Lock acquired (PID $$)."
 log "Config: AGENT_BIN=$AGENT_BIN | AI_REPO_ROOT=$AI_REPO_ROOT | LOG_DIR=$LOG_DIR"
 echo ""
 
+# Clear cert env vars that point to missing files (e.g. /rootCA.pem from .zshrc).
+# The agent fails with "Security command failed" when these point to a path that doesn't exist.
+for _var in NODE_EXTRA_CA_CERTS SSL_CERT_FILE REQUESTS_CA_BUNDLE CURL_CA_BUNDLE; do
+  _val="${(P)_var}"
+  if [[ -n "$_val" && ! -f "$_val" ]]; then
+    unset "$_var"
+    log "Unset $_var (pointed to missing file: $_val)"
+  fi
+done
+
 # =============================================================================
 # MAIN: Query Jira and kick off agents
 # =============================================================================
