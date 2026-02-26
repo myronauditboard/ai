@@ -144,39 +144,36 @@ elif git -C "$FRONTEND_REPO" rev-parse --verify "$BRANCH_NAME" &>/dev/null; then
   FRONTEND_BRANCH_SOURCE="local"
 fi
 
-if [[ "$BACKEND_BRANCH_EXISTS" -eq 1 || "$FRONTEND_BRANCH_EXISTS" -eq 1 ]]; then
-  log "[$TICKET_KEY] Branch $BRANCH_NAME already exists. No new work started."
-  if [[ "$BACKEND_BRANCH_EXISTS" -eq 1 ]]; then
-    log "[$TICKET_KEY] Backend branch found ($BACKEND_BRANCH_SOURCE)."
-    if [[ "$BACKEND_BRANCH_SOURCE" == "remote" ]]; then
-      PR_URL=$(gh pr list --head "$BRANCH_NAME" -R "$BACKEND_GH_REPO" --json url -q '.[0].url' 2>/dev/null || true)
-      if [[ -n "$PR_URL" ]]; then
-        open "$PR_URL"
-        log "[$TICKET_KEY] Opened backend PR: $PR_URL"
-      else
-        open "https://github.com/$BACKEND_GH_REPO/tree/$BRANCH_NAME"
-        log "[$TICKET_KEY] No backend PR found; opened remote branch page."
-      fi
+if [[ "$BACKEND_BRANCH_EXISTS" -eq 1 ]]; then
+  log "[$TICKET_KEY] Backend branch found ($BACKEND_BRANCH_SOURCE). Skipping backend."
+  if [[ "$BACKEND_BRANCH_SOURCE" == "remote" ]]; then
+    PR_URL=$(gh pr list --head "$BRANCH_NAME" -R "$BACKEND_GH_REPO" --json url -q '.[0].url' 2>/dev/null || true)
+    if [[ -n "$PR_URL" ]]; then
+      log "[$TICKET_KEY] Backend PR: $PR_URL"
     else
-      log "[$TICKET_KEY] Backend branch is local-only (not pushed). May be from a previous incomplete run."
+      log "[$TICKET_KEY] Backend branch (no PR): https://github.com/$BACKEND_GH_REPO/tree/$BRANCH_NAME"
     fi
+  else
+    log "[$TICKET_KEY] Backend branch is local-only (not pushed). May be from a previous incomplete run."
   fi
-  if [[ "$FRONTEND_BRANCH_EXISTS" -eq 1 ]]; then
-    log "[$TICKET_KEY] Frontend branch found ($FRONTEND_BRANCH_SOURCE)."
-    if [[ "$FRONTEND_BRANCH_SOURCE" == "remote" ]]; then
-      PR_URL=$(gh pr list --head "$BRANCH_NAME" -R "$FRONTEND_GH_REPO" --json url -q '.[0].url' 2>/dev/null || true)
-      if [[ -n "$PR_URL" ]]; then
-        open "$PR_URL"
-        log "[$TICKET_KEY] Opened frontend PR: $PR_URL"
-      else
-        open "https://github.com/$FRONTEND_GH_REPO/tree/$BRANCH_NAME"
-        log "[$TICKET_KEY] No frontend PR found; opened remote branch page."
-      fi
+fi
+
+if [[ "$FRONTEND_BRANCH_EXISTS" -eq 1 ]]; then
+  log "[$TICKET_KEY] Frontend branch found ($FRONTEND_BRANCH_SOURCE). Skipping frontend."
+  if [[ "$FRONTEND_BRANCH_SOURCE" == "remote" ]]; then
+    PR_URL=$(gh pr list --head "$BRANCH_NAME" -R "$FRONTEND_GH_REPO" --json url -q '.[0].url' 2>/dev/null || true)
+    if [[ -n "$PR_URL" ]]; then
+      log "[$TICKET_KEY] Frontend PR: $PR_URL"
     else
-      log "[$TICKET_KEY] Frontend branch is local-only (not pushed). May be from a previous incomplete run."
+      log "[$TICKET_KEY] Frontend branch (no PR): https://github.com/$FRONTEND_GH_REPO/tree/$BRANCH_NAME"
     fi
+  else
+    log "[$TICKET_KEY] Frontend branch is local-only (not pushed). May be from a previous incomplete run."
   fi
-  log "[$TICKET_KEY] Exiting (branch already exists)."
+fi
+
+if [[ "$BACKEND_BRANCH_EXISTS" -eq 1 && "$FRONTEND_BRANCH_EXISTS" -eq 1 ]]; then
+  log "[$TICKET_KEY] Both branches already exist. Nothing to do."
   exit 0
 fi
 
@@ -201,8 +198,8 @@ if [[ -z "$DECISION" ]]; then
 fi
 log "[$TICKET_KEY] Decision: $DECISION"
 
-RUN_BACKEND=$([[ "$DECISION" == "backend-only" || "$DECISION" == "both" ]] && echo "yes" || echo "no")
-RUN_FRONTEND=$([[ "$DECISION" == "frontend-only" || "$DECISION" == "both" ]] && echo "yes" || echo "no")
+RUN_BACKEND=$([[ "$BACKEND_BRANCH_EXISTS" -eq 0 && ("$DECISION" == "backend-only" || "$DECISION" == "both") ]] && echo "yes" || echo "no")
+RUN_FRONTEND=$([[ "$FRONTEND_BRANCH_EXISTS" -eq 0 && ("$DECISION" == "frontend-only" || "$DECISION" == "both") ]] && echo "yes" || echo "no")
 
 # =============================================================================
 # Step 5: Backend implementation (if needed)
