@@ -3,3 +3,7 @@
 
 # Lock files
 *.lock
+
+# Python (e.g. digital-twins)
+.venv
+__pycache__/
