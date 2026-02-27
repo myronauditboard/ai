@@ -213,7 +213,7 @@ if [[ "$RUN_BACKEND" == "yes" ]]; then
     JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
     BRANCH_NAME="$BRANCH_NAME" REPO_NEEDED="true" TICKET_TITLE="$TICKET_SUMMARY" \
     "$AGENT_BIN" -p -f --approve-mcps --workspace "$BACKEND_REPO" \
-    "Start work on Jira ticket $TICKET_KEY" || AGENT_RC=$?
+    "Start work on Jira ticket $TICKET_KEY. You MUST use the branch name: $BRANCH_NAME" || AGENT_RC=$?
   if [[ "$AGENT_RC" -ne 0 ]]; then
     log "[$TICKET_KEY] WARNING: backend agent exited with code $AGENT_RC. See $BACKEND_LOG"
   fi
@@ -237,7 +237,7 @@ if [[ "$RUN_FRONTEND" == "yes" ]]; then
     JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_EMAIL="$EMAIL" JIRA_API_TOKEN="$API_TOKEN" \
     BRANCH_NAME="$BRANCH_NAME" REPO_NEEDED="true" TICKET_TITLE="$TICKET_SUMMARY" \
     "$AGENT_BIN" -p -f --approve-mcps --workspace "$FRONTEND_REPO" \
-    "Start work on Jira ticket $TICKET_KEY" || AGENT_RC=$?
+    "Start work on Jira ticket $TICKET_KEY. You MUST use the branch name: $BRANCH_NAME" || AGENT_RC=$?
   if [[ "$AGENT_RC" -ne 0 ]]; then
     log "[$TICKET_KEY] WARNING: frontend agent exited with code $AGENT_RC. See $FRONTEND_LOG"
   fi

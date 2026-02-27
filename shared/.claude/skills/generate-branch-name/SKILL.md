@@ -1,14 +1,14 @@
 ---
 name: generate-branch-name
-description: Gets a standardized Git branch name for a Jira ticket. Prefer running the script shared/scripts/jira-monitor/generate-branch-name.sh (single implementation); fallback to same logic if script unavailable. Format {TICKET-ID}-{sanitized-title}, max 40 chars, no trailing hyphen.
+description: Gets a standardized Git branch name for a Jira ticket by running generate-branch-name.sh. There is NO fallback — the script is the only valid source for branch names. Format {TICKET-ID}-{sanitized-title}, max 40 chars, no trailing hyphen.
 ---
 
 # Generate Branch Name
 
-**Purpose**: Return a standardized branch name for a Jira ticket so all repos use the same name. The **single implementation** is the script `shared/scripts/jira-monitor/generate-branch-name.sh`. This skill tells the agent how to call it (or replicate it when unavailable).
+**Purpose**: Return a standardized branch name for a Jira ticket so all repos use the same name. The **only valid source** is the script `shared/scripts/jira-monitor/generate-branch-name.sh`. There is no fallback logic.
 
 **Usage**:
-- **Monitor** (`check-jira.sh`): Uses the script only; no agent.
+- **Monitor** (`check-jira.sh`): Uses the script directly; passes `BRANCH_NAME` to agents.
 - **Agent** (e.g. manual "start work on SOX-123" when `BRANCH_NAME` is not set): Use this skill — get the ticket summary, then run the script with key and summary; use the script output as the branch name.
 
 ## Input
@@ -32,39 +32,36 @@ Use the **Jira issue Summary (title) field only**. Do not use description or oth
   ```
 - **Otherwise:** Use Unblocked: "Show me Jira issue {TICKET-ID}" and extract **only** the issue Summary/Title. Do not use description or other sections.
 
-### Step 2: Run the script (preferred)
+### Step 2: Run the script (REQUIRED — no fallback)
 
-If the script is available (e.g. workspace root is or contains the ai repo, so `shared/scripts/jira-monitor/generate-branch-name.sh` or `ai/shared/scripts/jira-monitor/generate-branch-name.sh` exists and is executable):
+Find and run `generate-branch-name.sh`. Try these paths in order:
+
+1. `shared/scripts/jira-monitor/generate-branch-name.sh`
+2. `ai/shared/scripts/jira-monitor/generate-branch-name.sh`
+3. Resolve relative to the workspace root
 
 ```bash
 /path/to/generate-branch-name.sh "{TICKET-ID}" "{SUMMARY}"
 ```
 
-Use the script’s output as the branch name. **Do not** modify or re-sanitize it.
+Use the script's output as the branch name. **Do not** modify or re-sanitize it.
 
-### Step 3: Fallback when the script is not available
-
-If you cannot run the script (path not found or not executable), implement the same logic as the script. The authoritative behavior is in `shared/scripts/jira-monitor/generate-branch-name.sh`:
-
-- Sanitize summary: lowercase, non-alphanumeric → hyphen, collapse hyphens, strip leading/trailing hyphens.
-- If suffix is empty, branch name = `{TICKET-ID}` only.
-- Else: `{TICKET-ID}-{suffix}`, truncate to 40 characters, then strip a trailing hyphen if present (so the name never ends with `-`).
-
-Output that branch name.
+**If the script cannot be found or is not executable, stop and report the error. Do NOT invent a branch name or implement your own naming logic.**
 
 ## Key Rules
 
-1. **Prefer the script** — Run `generate-branch-name.sh` with ticket key and summary whenever the script path is available.
+1. **ALWAYS use the script** — Run `generate-branch-name.sh` with ticket key and summary. There is no fallback. If the script is unavailable, stop with an error.
 2. **Summary from Jira** — Use Jira REST API when env vars are set; otherwise Unblocked. Use only the issue Summary/Title field.
-3. **Max 40 chars, no trailing hyphen** — The script enforces this; if you implement the fallback, do the same.
+3. **NEVER construct a branch name yourself** — No matter the circumstances, do not generate, guess, or build a branch name. Only the script output is valid.
 
 ## Edge Cases
 
-- **Empty summary:** Branch name = `{TICKET-ID}` only.
+- **Empty summary:** The script handles this (returns `{TICKET-ID}` only).
 - **Lookup fails:** Do not invent a name; return an error. Do not output a meta-sentence as the branch name.
+- **Script not found:** Stop and report the error. Do NOT implement a fallback.
 
 ## Troubleshooting
 
 **Wrong branch name:** Ensure you use the Jira API for the summary when credentials are set; Unblocked may return description or an old title.
 
-**Script not found:** Resolve the path from the workspace (e.g. `ai/shared/scripts/jira-monitor/` or `shared/scripts/jira-monitor/`). If truly unavailable, use the fallback logic above and match the script’s behavior.
+**Script not found:** Resolve the path from the workspace (e.g. `ai/shared/scripts/jira-monitor/` or `shared/scripts/jira-monitor/`). If truly unavailable, **stop with an error** — do not improvise.

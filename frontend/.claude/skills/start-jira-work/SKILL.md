@@ -93,35 +93,24 @@ Epic-specific instructions may:
 
 ## Step 2: Create Branch
 
-**Branch Name**:
+**Branch Name — MUST come from one of these two sources (no exceptions):**
 
-**Option 1** (Preferred when launched from check-jira.sh): If the environment variable `BRANCH_NAME` is set, use it directly. This ensures consistent naming across backend and frontend repos.
+1. **From the prompt or `BRANCH_NAME` env var** (check-jira.sh sets both): Use that exact name. Do NOT modify it. Do NOT add prefixes (like your username). Do NOT generate a different name.
+2. **From the script** (manual runs where `BRANCH_NAME` is not set and no branch name is in the prompt): Run `generate-branch-name.sh` and use its output exactly.
+   ```bash
+   BRANCH_NAME=$(shared/scripts/jira-monitor/generate-branch-name.sh "{TICKET-ID}" "{SUMMARY}")
+   ```
+   If the script is not found, try `ai/shared/scripts/jira-monitor/generate-branch-name.sh`. If neither path works, **stop and report the error**. Do NOT invent a branch name.
 
-**Option 2** (Manual runs): If `BRANCH_NAME` is not set, call the `generate-branch-name` skill to get the standardized branch name.
-
-Search for and use the skill named **"generate-branch-name"** which should be available in the workspace or a related shared repository (typically in an `ai/general` directory structure). This skill is the single source of truth for branch naming logic.
-
-The skill will:
-- Look up the ticket details from Jira
-- Apply the standardized naming convention
-- Return a branch name in the format: `{TICKET-ID}-{sanitized-title}`
-
-Example output: `SOX-XXXXX-add-compliance-checks-for-au`
-
-Example: `SOX-XXXXX-add-new-compliance-checks`
-
-**Note:** When launched from check-jira.sh, branch existence is already checked via GitHub CLI; the script only invokes this workflow when the branch does not exist. For manual runs, create the branch as below.
+**You must NEVER generate, guess, or construct a branch name yourself. Always use one of the two sources above.**
 
 Commands:
 
 ```bash
 git checkout develop
 git pull origin develop
-# Use $BRANCH_NAME if set (from check-jira.sh), otherwise use the name from generate-branch-name skill
-git checkout -b "${BRANCH_NAME:-SOX-XXXXX-add-new-compliance-checks}"
+git checkout -b "$BRANCH_NAME"
 ```
-
-Replace `SOX-XXXXX-add-new-compliance-checks` with the actual branch name obtained from Step 2.
 
 **When launched from check-jira.sh (`REPO_NEEDED` set):** Right after creating the branch, perform **Step 5 (Update Ticket in Jira)** now—move the ticket to "In Progress" and set assignee via Jira REST API. Doing this early ensures the ticket status is updated even if the run is interrupted later. Then continue to Step 3.
 
@@ -378,7 +367,7 @@ open "$(gh pr view --json url -q .url)"
 4. **First commit**: Subject starts with full ticket ID and title
 5. **Subsequent commits**: Do NOT include ticket ID in subject
 6. **No agent attribution**: Never add Co-authored-by tags
-7. **Branch naming**: Ticket ID + first 30 chars of title
+7. **Branch naming**: ALWAYS use `BRANCH_NAME` from the prompt/env var, or run `generate-branch-name.sh`. NEVER construct a branch name yourself.
 8. **PR body**: Must have Summary, Jira link, Test Plan
 9. **Ticket updates**: Assign to current user and move to "In Progress" when starting (Step 5); do not skip; use REST API when headless.
 10. **Commit and PR**: Do not end the workflow without committing changes and creating the PR when there are code changes.
